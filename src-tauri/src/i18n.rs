@@ -165,6 +165,132 @@ fn merge_translation_file(
     Ok(())
 }
 
+// Keeps a translator's base.json complete as English gains new UI keys. Only
+// absent entries are inserted; existing values (translated or otherwise) are
+// never replaced. The line-based insertion preserves the translator's layout
+// and keeps the keys in the same order as the built-in English dictionary.
+fn add_missing_fallback_entries(
+    path: &Path,
+    label: &str,
+    fallback_entries: &[(String, String)],
+) -> Result<(), String> {
+    let text = fs::read_to_string(path)
+        .map_err(|error| format!("Could not read {label}: {error}"))?;
+    let value: Value = serde_json::from_str(&text)
+        .map_err(|error| format!("{label} is not valid JSON: {error}"))?;
+    let object = value
+        .as_object()
+        .ok_or_else(|| format!("{label} must contain a JSON object"))?;
+    let fallback_by_key: HashMap<&str, &str> = fallback_entries
+        .iter()
+        .map(|(key, value)| (key.as_str(), value.as_str()))
+        .collect();
+    let newline = if text.contains("\r\n") { "\r\n" } else { "\n" };
+    let had_final_newline = text.ends_with('\n');
+    let mut lines: Vec<String> = text
+        .lines()
+        .map(|line| line.trim_end_matches('\r').to_string())
+        .collect();
+
+    // Older repair builds appended fallbacks after language-specific keys such
+    // as champion names. Move only English-valued fallback entries back into
+    // the canonical UI-key order; translated values stay exactly where they are.
+    let first_extra = lines.iter().position(|line| {
+        line_entry_key(line).is_some_and(|key| {
+            key != "$meta" && !fallback_by_key.contains_key(key.as_str())
+        })
+    });
+    if let Some(first_extra) = first_extra {
+        lines = lines
+            .into_iter()
+            .enumerate()
+            .filter_map(|(index, line)| {
+                let should_move = index > first_extra
+                    && line_entry_key(&line).is_some_and(|key| {
+                        fallback_by_key.get(key.as_str()).is_some_and(|fallback| {
+                            object.get(&key).and_then(Value::as_str) == Some(*fallback)
+                        })
+                    });
+                (!should_move).then_some(line)
+            })
+            .collect();
+    }
+
+    for (fallback_index, (key, fallback)) in fallback_entries.iter().enumerate() {
+        if lines
+            .iter()
+            .any(|line| line_entry_key(line).as_deref() == Some(key))
+        {
+            continue;
+        }
+        let next_key = fallback_entries[fallback_index + 1..]
+            .iter()
+            .map(|(next, _)| next)
+            .find(|next| {
+                lines
+                    .iter()
+                    .any(|line| line_entry_key(line).as_deref() == Some(next))
+            });
+        let mut insertion = next_key
+            .and_then(|next| {
+                lines
+                    .iter()
+                    .position(|line| line_entry_key(line).as_deref() == Some(next))
+            })
+            .or_else(|| {
+                lines.iter().position(|line| {
+                    line_entry_key(line).is_some_and(|entry| {
+                        entry != "$meta" && !fallback_by_key.contains_key(entry.as_str())
+                    })
+                })
+            })
+            .or_else(|| lines.iter().rposition(|line| line.trim() == "}"))
+            .ok_or_else(|| format!("{label} must contain a JSON object"))?;
+        if next_key.is_none() {
+            while insertion > 0 && lines[insertion - 1].trim().is_empty() {
+                insertion -= 1;
+            }
+        }
+        lines.insert(
+            insertion,
+            format!(
+                "  {}: {},",
+                serde_json::to_string(key).expect("translation key is serializable"),
+                serde_json::to_string(fallback).expect("fallback text is serializable")
+            ),
+        );
+    }
+
+    let entry_lines: Vec<usize> = lines
+        .iter()
+        .enumerate()
+        .filter_map(|(index, line)| line_entry_key(line).map(|_| index))
+        .collect();
+    for (position, index) in entry_lines.iter().enumerate() {
+        let trimmed = lines[*index].trim_end_matches(',').to_string();
+        lines[*index] = if position + 1 == entry_lines.len() {
+            trimmed
+        } else {
+            format!("{trimmed},")
+        };
+    }
+    let mut repaired = lines.join(newline);
+    if had_final_newline {
+        repaired.push_str(newline);
+    }
+    if repaired == text {
+        return Ok(());
+    }
+    fs::write(path, repaired)
+        .map_err(|error| format!("Could not add fallback entries to {label}: {error}"))
+}
+
+fn line_entry_key(line: &str) -> Option<String> {
+    let trimmed = line.trim_start();
+    let end = trimmed.find("\":")?;
+    serde_json::from_str(&trimmed[..=end]).ok()
+}
+
 fn load_translation_from_roots(
     bundled_dir: Option<&Path>,
     user_dir: &Path,
@@ -197,10 +323,32 @@ fn load_translation_from_roots(
 pub fn load_translation(
     app: tauri::AppHandle,
     id: String,
+    fallback_entries: Vec<(String, String)>,
 ) -> Result<HashMap<String, String>, String> {
     let id = canonical_language_id(&id);
     let user_dir = user_translations_dir(&app)?;
     let bundled_dir = bundled_translations_dir();
+    if id != "en" {
+        let bundled_base = bundled_dir
+            .as_ref()
+            .map(|dir| (dir.join(&id).join("base.json"), "packaged"));
+        let user_base = (user_dir.join(&id).join("base.json"), "user");
+        for (path, source) in bundled_base.into_iter().chain([user_base]) {
+            if !path.is_file() {
+                continue;
+            }
+            // Development/package and user translations both receive missing
+            // keys when writable. Installed packaged files may be read-only;
+            // failure is non-fatal because runtime English fallback still works.
+            if let Err(error) = add_missing_fallback_entries(
+                &path,
+                &format!("{source} {id}/base.json"),
+                &fallback_entries,
+            ) {
+                eprintln!("Translation fallback merge skipped: {error}");
+            }
+        }
+    }
     load_translation_from_roots(bundled_dir.as_deref(), &user_dir, &id)
 }
 
@@ -256,7 +404,10 @@ pub fn open_translations_folder(app: tauri::AppHandle) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{canonical_language_id, load_translation_from_roots};
+    use super::{
+        add_missing_fallback_entries, canonical_language_id, load_translation_from_roots,
+    };
+    use serde_json::Value;
     use std::{
         fs,
         path::PathBuf,
@@ -280,6 +431,33 @@ mod tests {
         assert_eq!(canonical_language_id("zh-hant"), "zh-hant");
         assert_eq!(canonical_language_id("zh-CN"), "zh-hans");
         assert_eq!(canonical_language_id("ja"), "ja");
+    }
+
+    #[test]
+    fn adds_only_missing_fallbacks_without_overwriting_translations() {
+        let root = temp_root("translation-missing-keys");
+        fs::create_dir_all(&root).unwrap();
+        let path = root.join("base.json");
+        fs::write(
+            &path,
+            "{\n  \"$meta\": { \"name\": \"Test\", \"direction\": \"ltr\" },\n\n  \"existing\": \"已翻譯\"\n}\n",
+        )
+        .unwrap();
+
+        add_missing_fallback_entries(
+            &path,
+            "test/base.json",
+            &[
+                ("existing".to_string(), "English".to_string()),
+                ("new.key".to_string(), "New fallback".to_string()),
+            ],
+        )
+        .unwrap();
+
+        let parsed: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(parsed["existing"], "已翻譯");
+        assert_eq!(parsed["new.key"], "New fallback");
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

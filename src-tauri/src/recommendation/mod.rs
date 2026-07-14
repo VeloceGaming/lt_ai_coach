@@ -223,17 +223,42 @@ pub enum ReasonTone {
 pub struct Reason {
     pub text: String,
     pub tone: ReasonTone,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub translation_key: Option<String>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub translation_values: BTreeMap<String, String>,
 }
 
 impl Reason {
     fn positive(text: impl Into<String>) -> Self {
-        Self { text: text.into(), tone: ReasonTone::Positive }
+        Self::new(text, ReasonTone::Positive)
     }
     fn negative(text: impl Into<String>) -> Self {
-        Self { text: text.into(), tone: ReasonTone::Negative }
+        Self::new(text, ReasonTone::Negative)
     }
     fn neutral(text: impl Into<String>) -> Self {
-        Self { text: text.into(), tone: ReasonTone::Neutral }
+        Self::new(text, ReasonTone::Neutral)
+    }
+    fn new(text: impl Into<String>, tone: ReasonTone) -> Self {
+        Self {
+            text: text.into(),
+            tone,
+            translation_key: None,
+            translation_values: BTreeMap::new(),
+        }
+    }
+    fn translated<I, K, V>(mut self, key: &str, values: I) -> Self
+    where
+        I: IntoIterator<Item = (K, V)>,
+        K: Into<String>,
+        V: Into<String>,
+    {
+        self.translation_key = Some(key.to_string());
+        self.translation_values = values
+            .into_iter()
+            .map(|(name, value)| (name.into(), value.into()))
+            .collect();
+        self
     }
     /// Tone that follows the sign of a delta: non-negative reads as a plus,
     /// negative as a downside. Used for signed win-rate / matchup lines.
@@ -263,6 +288,50 @@ fn patch_reason_tone(row: &ChampionRoleStat) -> ReasonTone {
     } else {
         ReasonTone::Neutral
     }
+}
+
+fn translated_patch_reason(row: &ChampionRoleStat) -> Reason {
+    let historical_games = row.games.saturating_sub(row.current_patch_games);
+    let context = if row.current_patch_games == 0 {
+        "NoCurrent"
+    } else if historical_games == 0 {
+        "CurrentOnly"
+    } else {
+        "CurrentAndOlder"
+    };
+    let (kind, mut values) = if row.patch_added {
+        ("Added", BTreeMap::new())
+    } else if let Some(strongest) = row.patch_changes.first() {
+        let kind = if row.patch_impact >= 2.0 {
+            "Buffed"
+        } else if row.patch_impact <= -2.0 {
+            "Nerfed"
+        } else {
+            "Mixed"
+        };
+        let target = strongest
+            .target
+            .as_deref()
+            .map(|target| format!(" ({})", target.replace('_', " ")))
+            .unwrap_or_default();
+        let values = BTreeMap::from([
+            ("changes".to_string(), row.patch_changes.len().to_string()),
+            ("signal".to_string(), format!("{:+.1}", row.patch_impact)),
+            ("field".to_string(), crate::patch::humanize_patch_field(&strongest.field).to_string()),
+            ("target".to_string(), target),
+            ("oldValue".to_string(), crate::patch::format_patch_value(strongest.old_value)),
+            ("newValue".to_string(), crate::patch::format_patch_value(strongest.new_value)),
+        ]);
+        (kind, values)
+    } else {
+        ("Changed", BTreeMap::new())
+    };
+    values.insert("currentGames".to_string(), row.current_patch_games.to_string());
+    values.insert("olderGames".to_string(), historical_games.to_string());
+    Reason::new(crate::patch::patch_evidence_reason(row), patch_reason_tone(row)).translated(
+        &format!("recommendation.reason.patch{kind}{context}"),
+        values,
+    )
 }
 
 #[derive(Clone, Serialize)]
@@ -1241,6 +1310,9 @@ fn score_pick(
         reasons.push(Reason::from_delta(
             format!("Manually flagged {}-tier ({direction})", tier.code()),
             tier.performance_shift(),
+        ).translated(
+            if direction == "boosted" { "recommendation.reason.manualTierBoosted" } else { "recommendation.reason.manualTierLowered" },
+            [("tier", tier.code().to_string())],
         ));
     }
     // Core role performance (or overall when the champion has no role data yet).
@@ -1253,7 +1325,11 @@ fn score_pick(
                 role.games
             ),
             role.adjusted_win_rate - 0.5,
-        ));
+        ).translated("recommendation.reason.roleWinRate", [
+            ("role", title_role(&role.role)),
+            ("winRate", format!("{:.1}", role.adjusted_win_rate * 100.0)),
+            ("games", role.games.to_string()),
+        ]));
     } else {
         reasons.push(Reason::from_delta(
             format!(
@@ -1262,7 +1338,10 @@ fn score_pick(
                 overall.games
             ),
             overall.adjusted_win_rate - 0.5,
-        ));
+        ).translated("recommendation.reason.adjustedWinRate", [
+            ("winRate", format!("{:.1}", overall.adjusted_win_rate * 100.0)),
+            ("games", overall.games.to_string()),
+        ]));
     }
     // Concrete synergy evidence: the best-sampled ally pairings, named, with the
     // pair win rate and how many games back it (up to two so it stays readable).
@@ -1278,7 +1357,12 @@ fn score_pick(
             pair.win_rate * 100.0,
             pair.games,
             pair.delta * 100.0
-        )));
+        )).translated("recommendation.reason.pairsWith", [
+            ("champion", crate::statistics::humanize_id(&pair.other)),
+            ("winRate", format!("{:.1}", pair.win_rate * 100.0)),
+            ("games", pair.games.to_string()),
+            ("delta", format!("{:+.1}", pair.delta * 100.0)),
+        ]));
     }
     // Named counter-pick evidence: the strongest lane clashes (either way)
     // against specific enemy picks, so it's clear who the matchup is about.
@@ -1304,6 +1388,15 @@ fn score_pick(
                 matchup.delta * 100.0
             ),
             matchup.delta,
+        ).translated(
+            if matchup.delta >= 0.0 { "recommendation.reason.strongInto" } else { "recommendation.reason.weakInto" },
+            [
+                ("champion", crate::statistics::humanize_id(&matchup.enemy)),
+                ("role", title_role(&matchup.role)),
+                ("winRate", format!("{:.1}", matchup.win_rate * 100.0)),
+                ("games", matchup.games.to_string()),
+                ("delta", format!("{:+.1}", matchup.delta * 100.0)),
+            ],
         ));
     }
     if let Some(role) = best_role {
@@ -1323,6 +1416,13 @@ fn score_pick(
                         baseline.mean
                     ),
                     rating - baseline.mean,
+                ).translated(
+                    if rating >= baseline.mean { "recommendation.reason.ratingAbovePar" } else { "recommendation.reason.ratingBelowPar" },
+                    [
+                        ("role", title_role(&role.role)),
+                        ("rating", format!("{rating:.0}")),
+                        ("average", format!("{:.0}", baseline.mean)),
+                    ],
                 ));
             }
         }
@@ -1332,39 +1432,41 @@ fn score_pick(
             reasons.push(Reason::positive(format!(
                 "Adds uncovered {} role",
                 title_role(&role.role)
-            )));
+            )).translated("recommendation.reason.addsUncoveredRole", [
+                ("role", title_role(&role.role)),
+            ]));
         }
     }
     if assigned_role_credible && flexibility >= 2 {
-        reasons.push(Reason::positive(format!("Viable in {flexibility} roles")));
+        reasons.push(Reason::positive(format!("Viable in {flexibility} roles"))
+            .translated("recommendation.reason.viableRoles", [("count", flexibility.to_string())]));
     }
     if !assigned_role_credible {
         reasons.push(Reason::negative(
             "Role assignment is not evidence-backed; no coverage credit applied",
-        ));
+        ).translated("recommendation.reason.roleAssignmentUnproven", [] as [(&str, String); 0]));
     }
     if collision_penalty >= ROLE_COLLISION_REASON_THRESHOLD {
         reasons.push(Reason::negative(format!(
             "Competes with current picks for the same primary role (-{collision_penalty:.1} score)"
-        )));
+        )).translated("recommendation.reason.roleCollision", [
+            ("penalty", format!("{collision_penalty:.1}")),
+        ]));
     }
     if draft_presence_value >= 0.8 {
         reasons.push(Reason::neutral(
             "Highly contested in drafts (frequently picked or banned)",
-        ));
+        ).translated("recommendation.reason.highlyContested", [] as [(&str, String); 0]));
     }
     // Only surface patch evidence when the champion was actually changed this
     // patch; the "unchanged, full history" case is constant noise.
     if overall.patch_changed || overall.patch_added {
-        reasons.push(Reason {
-            text: crate::patch::patch_evidence_reason(overall),
-            tone: patch_reason_tone(overall),
-        });
+        reasons.push(translated_patch_reason(overall));
     }
     if interaction.matchup_games == 0 && blind_pick {
         reasons.push(Reason::neutral(
             "Blind-pick phase favors flexible role coverage",
-        ));
+        ).translated("recommendation.reason.blindPickFlexibility", [] as [(&str, String); 0]));
     }
     Recommendation {
         champion_id: champion.id.clone(),
@@ -1490,7 +1592,10 @@ fn score_ban(
             overall.games
         ),
         overall.adjusted_win_rate - 0.5,
-    )];
+    ).translated("recommendation.reason.patchWeightedWinRate", [
+        ("winRate", format!("{:.1}", overall.adjusted_win_rate * 100.0)),
+        ("games", overall.games.to_string()),
+    ])];
     if let Some(tier) = manual_tier {
         let direction = if tier.performance_shift() >= 0.0 {
             "raised"
@@ -1500,23 +1605,27 @@ fn score_ban(
         reasons.push(Reason::from_delta(
             format!("Manually flagged {}-tier (ban priority {direction})", tier.code()),
             tier.performance_shift(),
+        ).translated(
+            if direction == "raised" { "recommendation.reason.manualBanTierRaised" } else { "recommendation.reason.manualBanTierLowered" },
+            [("tier", tier.code().to_string())],
         ));
     }
     if overall.patch_changed || overall.patch_added {
-        reasons.push(Reason {
-            text: crate::patch::patch_evidence_reason(overall),
-            tone: patch_reason_tone(overall),
-        });
+        reasons.push(translated_patch_reason(overall));
     }
     if let Some(role) = best_role {
         reasons.push(Reason::positive(format!(
             "Peak threat: {} at {:.1}%",
             title_role(&role.role),
             role.adjusted_win_rate * 100.0
-        )));
+        )).translated("recommendation.reason.peakThreat", [
+            ("role", title_role(&role.role)),
+            ("winRate", format!("{:.1}", role.adjusted_win_rate * 100.0)),
+        ]));
     }
     if flexibility >= 2 {
-        reasons.push(Reason::positive(format!("Flexible across {flexibility} roles")));
+        reasons.push(Reason::positive(format!("Flexible across {flexibility} roles"))
+            .translated("recommendation.reason.flexibleRoles", [("count", flexibility.to_string())]));
     }
     if counterability.games > 0 {
         if counterability.value <= 0.46 {
@@ -1524,14 +1633,19 @@ fn score_ban(
                 "Hard to answer: best reliable counters average {:.1}% over {} games",
                 counterability.value * 100.0,
                 counterability.games
-            )));
+            )).translated("recommendation.reason.hardToAnswer", [
+                ("winRate", format!("{:.1}", counterability.value * 100.0)),
+                ("games", counterability.games.to_string()),
+            ]));
         }
     }
     if synergy_hub.value >= 0.025 {
         reasons.push(Reason::positive(format!(
             "Enables multiple strong pairings ({:+.1}% synergy lift)",
             synergy_hub.value * 100.0
-        )));
+        )).translated("recommendation.reason.strongPairings", [
+            ("delta", format!("{:+.1}", synergy_hub.value * 100.0)),
+        ]));
     }
     let opponent_side = if request.side == "red" { "Blue" } else { "Red" };
     let own_side = if request.side == "red" { "Red" } else { "Blue" };
@@ -1542,7 +1656,11 @@ fn score_ban(
             "{opponent_side}'s current picks change its expected synergy by {:+.1}% (up to {} role-pair games)",
             draft_context.synergy_delta * 100.0,
             draft_context.synergy_games
-        )));
+        )).translated("recommendation.reason.currentPicksSynergy", [
+            ("side", opponent_side.to_string()),
+            ("delta", format!("{:+.1}", draft_context.synergy_delta * 100.0)),
+            ("games", draft_context.synergy_games.to_string()),
+        ]));
     }
     if draft_context.matchup_games > 0
         && draft_context.matchup_delta.abs() >= BAN_CONTEXT_REASON_THRESHOLD
@@ -1551,22 +1669,30 @@ fn score_ban(
             "Expected matchup into {own_side}'s current picks is {:+.1}% (up to {} role-pair games)",
             draft_context.matchup_delta * 100.0,
             draft_context.matchup_games
-        )));
+        )).translated("recommendation.reason.expectedMatchup", [
+            ("side", own_side.to_string()),
+            ("delta", format!("{:+.1}", draft_context.matchup_delta * 100.0)),
+            ("games", draft_context.matchup_games.to_string()),
+        ]));
     }
     if first_pick_denial >= 3.0 {
         reasons.push(Reason::positive(
             "High-value Blue first pick; denying it is valuable",
-        ));
+        ).translated("recommendation.reason.denyBlueFirstPick", [] as [(&str, String); 0]));
     }
     if portfolio_adjustment >= PORTFOLIO_ADJUSTMENT_REASON_THRESHOLD {
         let label = portfolio_leftover_survival.map(survival_label);
         match (portfolio_claim, portfolio_leftover, label) {
             (Some(claim), Some(leftover), Some(label)) => reasons.push(Reason::neutral(format!(
                 "Blue can only claim one strong open pick; banning this leaves {claim} as Blue's likely survivor while {leftover} remains {label}"
-            ))),
+            )).translated("recommendation.reason.blueClaimWithLeftover", [
+                ("claim", claim.to_string()),
+                ("leftover", leftover.to_string()),
+                ("label", label.to_string()),
+            ])),
             (Some(claim), _, _) => reasons.push(Reason::neutral(format!(
                 "Blue can only claim one strong open pick; banning this leaves {claim} as Blue's likely survivor"
-            ))),
+            )).translated("recommendation.reason.blueClaim", [("claim", claim.to_string())])),
             _ => {}
         }
     }

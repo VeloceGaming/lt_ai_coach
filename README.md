@@ -101,6 +101,10 @@ overrides from its local application-data folder, where Steam Workshop updates
 cannot replace them. Missing keys fall back to the packaged translation and
 then to built-in English.
 
+When a selected language's `base.json` is writable, the app also inserts any
+new missing keys with their English fallback text. Existing entries are never
+overwritten, so translators can immediately find what still needs translating.
+
 Settings can open the writable user translation folder and export a complete
 translation template there.
 

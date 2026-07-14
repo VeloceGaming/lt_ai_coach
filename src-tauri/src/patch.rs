@@ -255,7 +255,7 @@ pub(crate) fn patch_performance_shift_values(
     max_shift * directional_signal * evidence_gap
 }
 
-fn humanize_patch_field(field: &str) -> &str {
+pub(crate) fn humanize_patch_field(field: &str) -> &str {
     match field {
         "magicPower" => "magic power",
         "magicResistance" => "magic resistance",
@@ -264,7 +264,7 @@ fn humanize_patch_field(field: &str) -> &str {
     }
 }
 
-fn format_patch_value(value: f64) -> String {
+pub(crate) fn format_patch_value(value: f64) -> String {
     if value.fract().abs() < 0.005 {
         format!("{value:.0}")
     } else {

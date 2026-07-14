@@ -217,6 +217,10 @@ export type ReasonTone = "positive" | "negative" | "neutral";
 export type Reason = {
   text: string;
   tone: ReasonTone;
+  /** Stable i18n key and named placeholders supplied by the recommendation
+   * engine. Older cached/preview reasons may omit these and fall back to text. */
+  translationKey?: string;
+  translationValues?: Record<string, string>;
 };
 
 export type Recommendation = {

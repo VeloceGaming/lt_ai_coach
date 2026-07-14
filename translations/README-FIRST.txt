@@ -106,6 +106,11 @@ For example:
 Missing translation keys automatically fall back to English, so an incomplete
 file will still work. A complete translation is preferred.
 
+When a selected language's base.json is writable, LT AI Coach automatically
+adds newly introduced missing keys with their English fallback text. It never
+changes an existing key or translated value. This makes new untranslated text
+easy to find without requiring translators to compare templates manually.
+
 
 4. JSON rules
 --------------

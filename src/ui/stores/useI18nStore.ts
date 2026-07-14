@@ -54,7 +54,7 @@ function persistLanguage(id: string) {
 // rather than blocking the UI.
 function fetchDict(id: string): Promise<Record<string, string>> {
   if (!isTauri()) return Promise.resolve({});
-  return invoke<Record<string, string>>("load_translation", { id }).catch(() => ({}));
+  return invoke<Record<string, string>>("load_translation", { id, fallbackEntries: Object.entries(en) }).catch(() => ({}));
 }
 
 export function interpolateTranslation(template: string, values: Record<string, string | number> = {}): string {

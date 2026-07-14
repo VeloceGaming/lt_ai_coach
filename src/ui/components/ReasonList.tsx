@@ -4,6 +4,7 @@
 
 import { IconCheck, IconAlertTriangle, IconMinus } from "@tabler/icons-react";
 import type { Reason, ReasonTone } from "../types";
+import { useT } from "../stores/useI18nStore";
 
 const TONE_ICON: Record<ReasonTone, typeof IconCheck> = {
   positive: IconCheck,
@@ -19,6 +20,7 @@ type Props = {
 };
 
 export function ReasonList({ reasons, className, limit = 4, iconSize = 13 }: Props) {
+  const t = useT();
   return (
     <ul className={className}>
       {reasons.slice(0, limit).map((reason, index) => {
@@ -26,7 +28,7 @@ export function ReasonList({ reasons, className, limit = 4, iconSize = 13 }: Pro
         return (
           <li key={index} className={`reason reason-${reason.tone}`}>
             <Icon size={iconSize} stroke={2.4} />
-            <span>{reason.text}</span>
+            <span>{reason.translationKey ? t(reason.translationKey, reason.translationValues) : reason.text}</span>
           </li>
         );
       })}
