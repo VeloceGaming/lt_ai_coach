@@ -192,6 +192,9 @@ fn cache_mod_champion_names(
     language_id: &str,
 ) -> Result<(), String> {
     let language_id = crate::i18n::canonical_language_id(language_id);
+    if language_id.eq_ignore_ascii_case("en") {
+        return Ok(());
+    }
     let mut translations: BTreeMap<String, String> = BTreeMap::new();
     for entry in champions.iter().filter(|entry| {
         !entry
@@ -364,6 +367,28 @@ mod tests {
         assert_eq!(value["champion.harpy"], "鷹身女妖");
         assert!(value.get("en").is_none());
         fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn english_mod_names_are_not_written() {
+        let root = std::env::temp_dir().join(format!(
+            "lt-ai-coach-english-mod-i18n-{}",
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let champions = vec![serde_json::json!({
+            "championId": "harpy",
+            "asset": "workshop/harpy.aseprite",
+            "status": "resolved",
+            "names": { "en": "Harpy", "zh-hant": "鷹身女妖" }
+        })];
+
+        cache_mod_champion_names(&root, &champions, "en").unwrap();
+
+        assert!(!root.join("en/mod.json").exists());
+        assert!(!root.exists());
     }
 }
 

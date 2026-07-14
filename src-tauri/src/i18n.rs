@@ -1,8 +1,8 @@
 //! Runtime UI translations. Each community language has its own directory in
 //! the project's `translations` folder: `<language>/base.json` is maintained by
-//! the translator, while portrait repair owns `mod.json` in the same directory.
-//! English UI text remains bundled in the frontend, but `translations/en/mod.json`
-//! may still provide names discovered from enabled champion mods.
+//! the translator, while portrait repair owns `mod.json` for non-English languages.
+//! English UI text remains bundled in the frontend, and English champion names
+//! come directly from the game data.
 
 use serde::Serialize;
 use serde_json::Value;
