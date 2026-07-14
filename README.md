@@ -23,6 +23,18 @@ is the easiest option, provided you trust me, of course.
 Both mods are required for the complete live workflow. The Coach can still be
 used for manual draft exploration after data has been imported.
 
+## How it works
+
+The Coach requests a fresh snapshot from the Exporter through its local
+application-data folder. The Exporter reads the currently loaded game and
+writes champion metadata, teams, players, match history, athlete proficiency,
+and patch history. The Coach imports that snapshot into its local SQLite
+database and calculates recommendations without an online service.
+
+During a live draft, the Bridge sends the current teams, draft rules, bans, and
+picks to the Coach over local UDP. See [docs/architecture.md](docs/architecture.md)
+for the complete runtime flow and component boundaries.
+
 ## Features
 
 - Live and manual draft recommendations.
@@ -75,7 +87,7 @@ npm run tauri:build
 - `src-tauri/` — Rust backend, importer, recommendation engine, live bridge,
   and Windows application configuration.
 - `assets/` — interface fonts, glyphs, icons, and champion artwork.
-- `data/catalog/` — champion and portrait catalogs compiled into the app.
+- `data/catalog/` — reproducible base-game portrait metadata compiled into the app.
 - `translations/` — community-maintained interface translations.
 - `scripts/` — catalog and performance-report utilities.
 - `docs/` — architecture, requirements, asset provenance, and diagnostics.
