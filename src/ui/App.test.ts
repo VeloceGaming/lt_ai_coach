@@ -17,6 +17,7 @@ describe("parseUserPreferences", () => {
       },
       minimumInteractionGames: 8,
       compactMode: true,
+      debugMode: true,
     }))).toEqual({
       mode: "fearless-hard",
       bansPerSide: 5,
@@ -32,6 +33,7 @@ describe("parseUserPreferences", () => {
       customTuning: defaultCustomTuning,
       minimumInteractionGames: 8,
       compactMode: true,
+      debugMode: true,
       autoOverlay: true,
     });
   });
@@ -42,6 +44,7 @@ describe("parseUserPreferences", () => {
       bansPerSide: 3,
       minimumInteractionGames: 3,
       compactMode: false,
+      debugMode: false,
     });
   });
 
@@ -68,6 +71,7 @@ describe("parseUserPreferences", () => {
       customTuning: defaultCustomTuning,
       minimumInteractionGames: 3,
       compactMode: false,
+      debugMode: false,
       autoOverlay: true,
     });
   });

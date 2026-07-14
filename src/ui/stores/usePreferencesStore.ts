@@ -20,6 +20,7 @@ type PreferencesState = UserPreferences & {
   setMinimumInteractionGames: (value: number) => void;
   setCompactMode: (value: boolean) => void;
   setAutoOverlay: (value: boolean) => void;
+  setDebugMode: (value: boolean) => void;
 };
 
 // Write the full preferences snapshot to localStorage, mirroring the original
@@ -34,6 +35,7 @@ function persist(state: PreferencesState) {
     minimumInteractionGames: state.minimumInteractionGames,
     compactMode: state.compactMode,
     autoOverlay: state.autoOverlay,
+    debugMode: state.debugMode,
   });
 }
 
@@ -50,4 +52,5 @@ export const usePreferencesStore = create<PreferencesState>((set, get) => ({
   setMinimumInteractionGames: (value) => { set({ minimumInteractionGames: value }); persist(get()); },
   setCompactMode: (value) => { set({ compactMode: value }); persist(get()); },
   setAutoOverlay: (value) => { set({ autoOverlay: value }); persist(get()); },
+  setDebugMode: (value) => { set({ debugMode: value }); persist(get()); },
 }));

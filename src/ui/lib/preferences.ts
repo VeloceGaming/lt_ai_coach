@@ -61,6 +61,7 @@ export const defaultUserPreferences: UserPreferences = {
   minimumInteractionGames: 3,
   compactMode: false,
   autoOverlay: true,
+  debugMode: false,
 };
 
 export function loadUserPreferences(): UserPreferences {
@@ -85,6 +86,7 @@ export function parseUserPreferences(stored: string | null): UserPreferences {
       minimumInteractionGames: validNumber(value.minimumInteractionGames, 1, 100) ? value.minimumInteractionGames : defaultUserPreferences.minimumInteractionGames,
       compactMode: value.compactMode === true,
       autoOverlay: value.autoOverlay !== false,
+      debugMode: value.debugMode === true,
     };
   } catch {
     return defaultUserPreferences;

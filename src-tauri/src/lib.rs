@@ -3,7 +3,7 @@ use std::{
     fs,
     path::{Path, PathBuf},
     sync::{Arc, Mutex, OnceLock},
-    time::SystemTime,
+    time::{Instant, SystemTime},
 };
 use tauri::Manager;
 
@@ -16,6 +16,7 @@ mod i18n;
 mod interactions;
 mod manual_tiers;
 mod patch;
+mod performance;
 mod pilot;
 mod recommendation;
 mod save_provider;
@@ -85,15 +86,25 @@ fn database_fingerprint(database_path: &Path) -> DatabaseFingerprint {
 }
 
 fn load_recommendation_data(database_path: &Path) -> Result<CachedRecommendationData, String> {
+    let started = Instant::now();
     let cache = RECOMMENDATION_DATA_CACHE.get_or_init(|| Mutex::new(None));
-    let fingerprint = database_fingerprint(database_path);
     let mut cached = cache
         .lock()
         .map_err(|_| "Recommendation data cache is unavailable.".to_string())?;
+    // Compute after acquiring the build lock. A request that waited for another
+    // cache build must compare against the database's post-build fingerprint,
+    // otherwise a transient WAL change can trigger an immediate duplicate build.
+    let fingerprint = database_fingerprint(database_path);
     if let Some(data) = cached
         .as_ref()
         .filter(|data| data.database_path == database_path && data.fingerprint == fingerprint)
     {
+        performance::duration(
+            "coach",
+            "recommendation_cache_hit",
+            started.elapsed(),
+            serde_json::json!({}),
+        );
         return Ok((
             Arc::clone(&data.catalog),
             Arc::clone(&data.statistics),
@@ -120,6 +131,12 @@ fn load_recommendation_data(database_path: &Path) -> Result<CachedRecommendation
         manual_tiers: Arc::clone(&manual_tiers),
         athletes: Arc::clone(&athletes),
     });
+    performance::duration(
+        "coach",
+        "recommendation_cache_build",
+        started.elapsed(),
+        serde_json::json!({}),
+    );
     Ok((catalog, statistics, interactions, manual_tiers, athletes))
 }
 
@@ -200,7 +217,15 @@ async fn import_from_game_export(
     app: tauri::AppHandle,
     bridge: tauri::State<'_, draft_bridge::DraftBridge>,
 ) -> Result<database::ImportSummary, String> {
-    let result = save_provider::import_from_exporter(app).await?;
+    let started = Instant::now();
+    let result = save_provider::import_from_exporter(app).await;
+    performance::duration(
+        "coach",
+        "import_total",
+        started.elapsed(),
+        serde_json::json!({ "status": if result.is_ok() { "ok" } else { "error" } }),
+    );
+    let result = result?;
     let player_team_id = result
         .player_team_id
         .map(|id| {
@@ -315,17 +340,25 @@ async fn get_athlete_mastery(
 async fn prepare_recommendation_cache(
     app: tauri::AppHandle,
 ) -> Result<statistics::RoleStatistics, String> {
+    let started = Instant::now();
     let database_path = app
         .path()
         .app_local_data_dir()
         .map_err(|error| format!("Could not resolve application data directory: {error}"))?
         .join("lt-ai-coach.sqlite3");
-    tauri::async_runtime::spawn_blocking(move || {
+    let result = tauri::async_runtime::spawn_blocking(move || {
         let (_, statistics, _, _, _) = load_recommendation_data(&database_path)?;
         Ok(statistics.as_ref().clone())
     })
     .await
-    .map_err(|error| format!("Coach preparation task failed: {error}"))?
+    .map_err(|error| format!("Coach preparation task failed: {error}"))?;
+    performance::duration(
+        "coach",
+        "prepare_recommendation_cache",
+        started.elapsed(),
+        serde_json::json!({ "status": if result.is_ok() { "ok" } else { "error" } }),
+    );
+    result
 }
 
 #[tauri::command]
@@ -333,12 +366,17 @@ async fn get_recommendations(
     app: tauri::AppHandle,
     request: recommendation::RecommendationRequest,
 ) -> Result<recommendation::RecommendationShortlist, String> {
+    let started = Instant::now();
+    let action_count = request.blue_bans.len()
+        + request.red_bans.len()
+        + request.blue_picks.len()
+        + request.red_picks.len();
     let database_path = app
         .path()
         .app_local_data_dir()
         .map_err(|error| format!("Could not resolve application data directory: {error}"))?
         .join("lt-ai-coach.sqlite3");
-    tauri::async_runtime::spawn_blocking(move || {
+    let result = tauri::async_runtime::spawn_blocking(move || {
         let (catalog, statistics, interactions, manual_tiers, athletes) =
             load_recommendation_data(&database_path)?;
         Ok::<_, String>(recommendation::build_shortlist_with_athletes(
@@ -351,7 +389,14 @@ async fn get_recommendations(
         ))
     })
     .await
-    .map_err(|error| format!("Recommendation task failed: {error}"))?
+    .map_err(|error| format!("Recommendation task failed: {error}"))?;
+    performance::duration(
+        "coach",
+        "manual_recommendation",
+        started.elapsed(),
+        serde_json::json!({ "actionCount": action_count, "status": if result.is_ok() { "ok" } else { "error" } }),
+    );
+    result
 }
 
 #[tauri::command]
@@ -360,6 +405,7 @@ async fn get_live_recommendations(
     bridge: tauri::State<'_, draft_bridge::DraftBridge>,
     options: LiveRecommendationOptions,
 ) -> Result<LiveRecommendationResponse, String> {
+    let started = Instant::now();
     let snapshot = bridge.snapshot();
     let request = live_recommendation_request(&snapshot, options)?;
     let source_revision = snapshot.revision;
@@ -383,6 +429,15 @@ async fn get_live_recommendations(
     })
     .await
     .map_err(|error| format!("Live recommendation task failed: {error}"))??;
+    performance::duration(
+        "coach",
+        "live_recommendation",
+        started.elapsed(),
+        serde_json::json!({
+            "revision": source_revision,
+            "contextRevision": source_context_revision,
+        }),
+    );
     Ok(LiveRecommendationResponse {
         source_revision,
         source_context_revision,
@@ -556,11 +611,42 @@ fn get_champion_tags(
     bridge.champion_tags()
 }
 
+#[tauri::command]
+fn get_performance_log_path() -> Option<String> {
+    performance::log_path().map(|path| path.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
+fn set_performance_logging(app: tauri::AppHandle, enabled: bool) -> Result<(), String> {
+    let data_root = app
+        .path()
+        .app_local_data_dir()
+        .map_err(|error| format!("Could not resolve application data directory: {error}"))?;
+    performance::set_enabled(&data_root, enabled)
+}
+
+#[tauri::command]
+fn open_performance_logs_folder(app: tauri::AppHandle) -> Result<(), String> {
+    let data_root = app
+        .path()
+        .app_local_data_dir()
+        .map_err(|error| format!("Could not resolve application data directory: {error}"))?;
+    let logs = data_root.join("logs");
+    fs::create_dir_all(&logs).map_err(|error| format!("Could not create log folder: {error}"))?;
+    std::process::Command::new("explorer")
+        .arg(&logs)
+        .spawn()
+        .map_err(|error| format!("Could not open log folder: {error}"))?;
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
+            let data_root = app.path().app_local_data_dir()?;
+            performance::init(&data_root).map_err(std::io::Error::other)?;
             app.manage(draft_bridge::DraftBridge::start(app.handle().clone()));
             Ok(())
         })
@@ -591,6 +677,9 @@ pub fn run() {
             get_live_recommendations,
             get_draft_bridge,
             get_champion_tags,
+            get_performance_log_path,
+            set_performance_logging,
+            open_performance_logs_folder,
             get_manual_tiers,
             set_champion_tier,
             set_champion_override,

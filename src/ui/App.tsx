@@ -58,6 +58,7 @@ export function App() {
   const lookupAthleteMastery = useImportStore((s) => s.lookupAthleteMastery);
   const mergeDraftChampions = useImportStore((s) => s.mergeDraftChampions);
   const autoOverlay = usePreferencesStore((s) => s.autoOverlay);
+  const debugMode = usePreferencesStore((s) => s.debugMode);
   const bridgeConnected = useOverlayStore((s) => s.bridgeConnected);
   const setBridgeConnected = useOverlayStore((s) => s.setBridgeConnected);
   const setBridgeContext = useOverlayStore((s) => s.setBridgeContext);
@@ -87,6 +88,13 @@ export function App() {
   const openChampionInTiers = (championId: string) => { setFocusChampion(championId); setScreen("tiers"); };
 
   useEffect(() => { initialize(); }, [initialize]);
+
+  // Keep the backend and both in-game mods on the same opt-in profiling flag.
+  // Only the main webview owns this setting; the overlay merely consumes data.
+  useEffect(() => {
+    if (isOverlayWindow || !("__TAURI_INTERNALS__" in window)) return;
+    invoke("set_performance_logging", { enabled: debugMode }).catch(() => {});
+  }, [debugMode]);
 
   // The live-draft bridge watcher belongs to the main app shell, not the Draft
   // tab. That lets auto-overlay wake up even while the full window is showing

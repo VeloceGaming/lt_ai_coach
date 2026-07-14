@@ -149,6 +149,15 @@ fn listen(
         let Ok(packet) = std::str::from_utf8(&buffer[..length]) else {
             continue;
         };
+        if let Some((action, duration_us, action_count)) = parse_performance_packet(packet) {
+            crate::performance::duration(
+                "bridge",
+                action,
+                Duration::from_micros(duration_us),
+                serde_json::json!({ "actionCount": action_count }),
+            );
+            continue;
+        }
         // Champion-tags snapshot (separate from the draft packet; doesn't affect
         // the live-draft `connected` heartbeat).
         if let Some(parsed_tags) = parse_tags_packet(packet) {
@@ -253,6 +262,15 @@ fn listen(
                 current.red_bans = merged.red_bans;
                 current.blue_picks = merged.blue_picks;
                 current.red_picks = merged.red_picks;
+                crate::performance::event(
+                    "coach",
+                    "draft_action_received",
+                    serde_json::json!({
+                        "revision": current.revision,
+                        "actionCount": current.blue_bans.len() + current.red_bans.len()
+                            + current.blue_picks.len() + current.red_picks.len(),
+                    }),
+                );
             }
             if history_changed {
                 current.context_revision = current.context_revision.wrapping_add(1);
@@ -402,6 +420,18 @@ fn parse_mode_packet(packet: &str) -> Option<&str> {
     matches!(mode, "normal" | "fearless" | "fearless-hard").then_some(mode)
 }
 
+fn parse_performance_packet(packet: &str) -> Option<(&str, u64, usize)> {
+    let mut fields = packet.trim().split('|');
+    if fields.next()? != "LTAC2PERF" {
+        return None;
+    }
+    let action = fields.next()?;
+    if action.is_empty() || fields.clone().count() != 2 {
+        return None;
+    }
+    Some((action, fields.next()?.parse().ok()?, fields.next()?.parse().ok()?))
+}
+
 // Champion-tags packet: `LTAC2TAGS|<id>:<tag>,<tag>;<id>:<tag>...`. Returns the
 // parsed map, or None if this isn't a tags packet.
 fn parse_tags_packet(packet: &str) -> Option<BTreeMap<String, Vec<String>>> {
@@ -528,6 +558,15 @@ mod tests {
         assert_eq!(parse_mode_packet("LTAC2MODE|fearless"), Some("fearless"));
         assert_eq!(parse_mode_packet("LTAC2MODE|fearless-hard"), Some("fearless-hard"));
         assert_eq!(parse_mode_packet("LTAC2MODE|custom"), None);
+    }
+
+    #[test]
+    fn parses_bridge_performance_events() {
+        assert_eq!(
+            parse_performance_packet("LTAC2PERF|draft_action|1250|4"),
+            Some(("draft_action", 1250, 4))
+        );
+        assert_eq!(parse_performance_packet("LTAC2PERF|draft_action|bad|4"), None);
     }
 
     #[test]

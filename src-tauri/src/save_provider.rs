@@ -9,7 +9,7 @@ use std::fs;
 use std::io::Cursor;
 use std::path::{Path, PathBuf};
 use std::thread::sleep;
-use std::time::{Duration, SystemTime};
+use std::time::{Duration, Instant, SystemTime};
 
 use tauri::{AppHandle, Manager};
 
@@ -38,6 +38,7 @@ const EXPORT_FILES: &[&str] = &[
     "match_replays.json",
     "pre_patch_data.json",
     "solo_rank_matches.json",
+    "performance_export.tsv",
 ];
 /// How long to wait for the mod to produce a fresh export before giving up.
 const EXPORT_TIMEOUT: Duration = Duration::from_secs(12);
@@ -57,6 +58,7 @@ pub async fn import_from_exporter(app: AppHandle) -> Result<database::ImportSumm
 
         // Ask the running mod to export the currently-loaded game right now.
         let requested_at = SystemTime::now();
+        let wait_started = Instant::now();
         clear_export_snapshot_files(&exporter_dir);
         let request = exporter_dir.join(REQUEST_FILE);
         fs::write(&request, b"export")
@@ -81,6 +83,12 @@ pub async fn import_from_exporter(app: AppHandle) -> Result<database::ImportSumm
             }
         };
         if !fresh {
+            crate::performance::duration(
+                "coach",
+                "export_wait",
+                wait_started.elapsed(),
+                serde_json::json!({ "status": "timeout" }),
+            );
             let _ = fs::remove_file(&request);
             return Err(
                 "Couldn't get fresh data from the game. Make sure Teamfight Manager 2 is \
@@ -89,8 +97,26 @@ pub async fn import_from_exporter(app: AppHandle) -> Result<database::ImportSumm
                     .to_string(),
             );
         }
-
-        database::import_exporter_output(data_root.join("lt-ai-coach.sqlite3"), &exporter_dir, None)
+        crate::performance::duration(
+            "coach",
+            "export_wait",
+            wait_started.elapsed(),
+            serde_json::json!({ "status": "ok" }),
+        );
+        crate::performance::ingest_exporter_trace(&exporter_dir.join("performance_export.tsv"));
+        let import_started = Instant::now();
+        let result = database::import_exporter_output(
+            data_root.join("lt-ai-coach.sqlite3"),
+            &exporter_dir,
+            None,
+        );
+        crate::performance::duration(
+            "coach",
+            "database_import",
+            import_started.elapsed(),
+            serde_json::json!({ "status": if result.is_ok() { "ok" } else { "error" } }),
+        );
+        result
     })
     .await
     .map_err(|error| format!("Import task failed: {error}"))?

@@ -1,6 +1,6 @@
 [package]
 name = "lt-ai-coach"
-version = "0.1.0"
+version = "1.0.0"
 description = "Role-aware Teamfight Manager 2 draft companion"
 authors = ["LT"]
 edition = "2021"

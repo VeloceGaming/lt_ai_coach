@@ -354,4 +354,4 @@ export type DraftTuning = {
   winRatePriorGames: number;
 };
 
-export type UserPreferences = { mode: DraftMode; bansPerSide: number; weights: ScoringWeights; strategy: DraftStrategy; customTuning: DraftTuning; minimumInteractionGames: number; compactMode: boolean; autoOverlay: boolean };
+export type UserPreferences = { mode: DraftMode; bansPerSide: number; weights: ScoringWeights; strategy: DraftStrategy; customTuning: DraftTuning; minimumInteractionGames: number; compactMode: boolean; autoOverlay: boolean; debugMode: boolean };

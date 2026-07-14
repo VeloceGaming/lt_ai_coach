@@ -78,6 +78,7 @@ export function SettingsScreen() {
   const refreshLanguages = useI18nStore((s) => s.refreshLanguages);
   const languageWarnings = useI18nStore((s) => s.languageWarnings);
   const [languageMessage, setLanguageMessage] = useState<string | null>(null);
+  const [debugMessage, setDebugMessage] = useState<string | null>(null);
   const typographyLocked = usesSystemTypography(languageId);
 
   // Pick up any translation file the user just dropped in without needing an
@@ -104,6 +105,8 @@ export function SettingsScreen() {
   const setWeight = usePreferencesStore((s) => s.setWeight);
   const minimumInteractionGames = usePreferencesStore((s) => s.minimumInteractionGames);
   const setMinimumInteractionGames = usePreferencesStore((s) => s.setMinimumInteractionGames);
+  const debugMode = usePreferencesStore((s) => s.debugMode);
+  const setDebugMode = usePreferencesStore((s) => s.setDebugMode);
 
   const effective = resolveMode(mode);
   const currentAccent = accent || DEFAULT_ACCENT;
@@ -317,6 +320,22 @@ export function SettingsScreen() {
           style={{ width: 64, textAlign: "center" }}
         />
       </div>
+    </section>
+
+    <section className="settings-section">
+      <div className="settings-section-head"><span className="eyebrow">{t("settings.section.diagnostics")}</span><h2>{t("settings.debugMode.heading")}</h2></div>
+      <div className="settings-row">
+        <div className="settings-label"><strong>{t("settings.debugMode.label")}</strong><span>{t("settings.debugMode.desc")}</span></div>
+        <label className="settings-switch">
+          <input type="checkbox" checked={debugMode} onChange={(event) => { setDebugMode(event.target.checked); setDebugMessage(t(event.target.checked ? "settings.debugMode.enabled" : "settings.debugMode.disabled")); }} aria-label={t("settings.debugMode.label")} />
+          <span className="settings-switch-track" aria-hidden="true" />
+        </label>
+      </div>
+      <div className="settings-row">
+        <div className="settings-label"><strong>{t("settings.debugMode.logsLabel")}</strong><span>{t("settings.debugMode.logsDesc")}</span></div>
+        <button type="button" className="secondary-button" onClick={() => invoke("open_performance_logs_folder").catch((error) => setDebugMessage(error instanceof Error ? error.message : String(error)))}>{t("settings.debugMode.openLogs")}</button>
+      </div>
+      {debugMessage && <p className="settings-strategy-desc">{debugMessage}</p>}
     </section>
   </div>;
 }

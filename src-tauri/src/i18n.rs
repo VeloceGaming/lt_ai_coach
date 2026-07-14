@@ -144,10 +144,119 @@ fn merge_translation_file(
     Ok(())
 }
 
+fn add_missing_fallback_entries(
+    path: &std::path::Path,
+    label: &str,
+    fallback_entries: &[(String, String)],
+) -> Result<(), String> {
+    let text = fs::read_to_string(path)
+        .map_err(|error| format!("Could not read {label}: {error}"))?;
+    let value: Value = serde_json::from_str(&text)
+        .map_err(|error| format!("{label} is not valid JSON: {error}"))?;
+    let object = value
+        .as_object()
+        .ok_or_else(|| format!("{label} must contain a JSON object"))?;
+    let fallback_by_key: HashMap<&str, &str> = fallback_entries
+        .iter()
+        .map(|(key, value)| (key.as_str(), value.as_str()))
+        .collect();
+    let newline = if text.contains("\r\n") { "\r\n" } else { "\n" };
+    let had_final_newline = text.ends_with('\n');
+    let mut lines: Vec<String> = text
+        .lines()
+        .map(|line| line.trim_end_matches('\r').to_string())
+        .collect();
+
+    // Older repair builds appended fallbacks after language-specific keys such
+    // as champion names. Remove only those English-valued entries so they can
+    // be placed back into the canonical UI-key order below.
+    let first_extra = lines.iter().position(|line| {
+        line_entry_key(line).is_some_and(|key| key != "$meta" && !fallback_by_key.contains_key(key.as_str()))
+    });
+    if let Some(first_extra) = first_extra {
+        lines = lines
+            .into_iter()
+            .enumerate()
+            .filter_map(|(index, line)| {
+                let should_move = index > first_extra
+                    && line_entry_key(&line).is_some_and(|key| {
+                        fallback_by_key.get(key.as_str()).is_some_and(|fallback| {
+                            object.get(&key).and_then(Value::as_str) == Some(*fallback)
+                        })
+                    });
+                (!should_move).then_some(line)
+            })
+            .collect();
+    }
+
+    for (fallback_index, (key, fallback)) in fallback_entries.iter().enumerate() {
+        if lines.iter().any(|line| line_entry_key(line).as_deref() == Some(key)) {
+            continue;
+        }
+        let next_key = fallback_entries[fallback_index + 1..]
+            .iter()
+            .map(|(next, _)| next)
+            .find(|next| lines.iter().any(|line| line_entry_key(line).as_deref() == Some(next)));
+        let mut insertion = next_key
+            .and_then(|next| lines.iter().position(|line| line_entry_key(line).as_deref() == Some(next)))
+            .or_else(|| {
+                lines.iter().position(|line| {
+                    line_entry_key(line)
+                        .is_some_and(|entry| entry != "$meta" && !fallback_by_key.contains_key(entry.as_str()))
+                })
+            })
+            .or_else(|| lines.iter().rposition(|line| line.trim() == "}"))
+            .ok_or_else(|| format!("{label} must contain a JSON object"))?;
+        if next_key.is_none() {
+            while insertion > 0 && lines[insertion - 1].trim().is_empty() {
+                insertion -= 1;
+            }
+        }
+        lines.insert(
+            insertion,
+            format!(
+                "  {}: {},",
+                serde_json::to_string(key).expect("translation key is serializable"),
+                serde_json::to_string(fallback).expect("fallback text is serializable")
+            ),
+        );
+    }
+
+    let entry_lines: Vec<usize> = lines
+        .iter()
+        .enumerate()
+        .filter_map(|(index, line)| line_entry_key(line).map(|_| index))
+        .collect();
+    for (position, index) in entry_lines.iter().enumerate() {
+        let trimmed = lines[*index].trim_end_matches(',').to_string();
+        lines[*index] = if position + 1 == entry_lines.len() {
+            trimmed
+        } else {
+            format!("{trimmed},")
+        };
+    }
+    let mut repaired = lines.join(newline);
+    if had_final_newline {
+        repaired.push_str(newline);
+    }
+    if repaired == text {
+        return Ok(());
+    }
+    fs::write(path, repaired)
+        .map_err(|error| format!("Could not add fallback entries to {label}: {error}"))
+}
+
+fn line_entry_key(line: &str) -> Option<String> {
+    let trimmed = line.trim_start();
+    let end = trimmed.find("\":")?;
+    serde_json::from_str(&trimmed[..=end]).ok()
+}
+
 #[tauri::command]
 pub fn load_translation(
     app: tauri::AppHandle,
     id: String,
+    fallback_entries: Vec<(String, String)>,
 ) -> Result<HashMap<String, String>, String> {
     let dir = translations_dir(&app)?;
     let id = canonical_language_id(&id);
@@ -157,6 +266,17 @@ pub fn load_translation(
     let mut out = HashMap::new();
 
     if base_path.is_file() {
+        if id != "en" {
+            // A read-only installed translation should still load; the frontend
+            // will continue using the same English fallback if repair cannot write.
+            if let Err(error) = add_missing_fallback_entries(
+                &base_path,
+                &format!("{id}/base.json"),
+                &fallback_entries,
+            ) {
+                eprintln!("Translation fallback repair skipped: {error}");
+            }
+        }
         merge_translation_file(&base_path, &format!("{id}/base.json"), &mut out)?;
     } else if id != "en" {
         return Err(format!("Could not read {id}/base.json: file does not exist"));
@@ -219,7 +339,9 @@ pub fn open_translations_folder(app: tauri::AppHandle) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
-    use super::canonical_language_id;
+    use super::{add_missing_fallback_entries, canonical_language_id};
+    use serde_json::Value;
+    use std::fs;
 
     #[test]
     fn canonicalizes_game_and_legacy_chinese_language_ids() {
@@ -227,5 +349,62 @@ mod tests {
         assert_eq!(canonical_language_id("zh-hant"), "zh-hant");
         assert_eq!(canonical_language_id("zh-CN"), "zh-hans");
         assert_eq!(canonical_language_id("ja"), "ja");
+    }
+
+    #[test]
+    fn adds_only_missing_fallbacks_without_overwriting_translations() {
+        let path = std::env::temp_dir().join(format!(
+            "lt-ai-coach-translation-repair-{}.json",
+            std::process::id()
+        ));
+        fs::write(
+            &path,
+            "{\n  \"$meta\": { \"name\": \"Test\", \"direction\": \"ltr\" },\n\n  \"existing\": \"translated\"\n}\n",
+        )
+        .unwrap();
+        let entries = vec![
+            ("existing".to_string(), "English".to_string()),
+            ("new.key".to_string(), "New fallback".to_string()),
+        ];
+
+        add_missing_fallback_entries(&path, "test/base.json", &entries).unwrap();
+
+        let repaired = fs::read_to_string(&path).unwrap();
+        let parsed: Value = serde_json::from_str(&repaired).unwrap();
+        assert_eq!(parsed["existing"], "translated");
+        assert_eq!(parsed["new.key"], "New fallback");
+        assert!(repaired.contains("\n\n  \"existing\""));
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn moves_previously_appended_fallbacks_before_language_specific_keys() {
+        let path = std::env::temp_dir().join(format!(
+            "lt-ai-coach-translation-order-{}.json",
+            std::process::id()
+        ));
+        fs::write(
+            &path,
+            "{\n  \"$meta\": { \"name\": \"Test\", \"direction\": \"ltr\" },\n\n  \"first\": \"翻譯\",\n\n  \"champion.extra\": \"角色\",\n  \"third\": \"Third\",\n  \"second\": \"Second\"\n}\n",
+        )
+        .unwrap();
+        let entries = vec![
+            ("first".to_string(), "First".to_string()),
+            ("second".to_string(), "Second".to_string()),
+            ("third".to_string(), "Third".to_string()),
+        ];
+
+        add_missing_fallback_entries(&path, "test/base.json", &entries).unwrap();
+
+        let repaired = fs::read_to_string(&path).unwrap();
+        let first = repaired.find("\"first\"").unwrap();
+        let second = repaired.find("\"second\"").unwrap();
+        let third = repaired.find("\"third\"").unwrap();
+        let champion = repaired.find("\"champion.extra\"").unwrap();
+        assert!(first < second && second < third && third < champion);
+        assert!(repaired.contains("\"first\": \"翻譯\""));
+        assert!(repaired.contains("\n\n  \"champion.extra\""));
+        let _: Value = serde_json::from_str(&repaired).unwrap();
+        let _ = fs::remove_file(path);
     }
 }
