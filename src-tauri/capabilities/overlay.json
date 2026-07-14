@@ -1,0 +1,10 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "overlay-window",
+  "description": "Window controls used by the LT AI Coach draft overlay",
+  "windows": ["overlay"],
+  "permissions": [
+    "core:window:allow-start-dragging",
+    "core:window:allow-hide"
+  ]
+}

@@ -643,7 +643,6 @@ fn open_performance_logs_folder(app: tauri::AppHandle) -> Result<(), String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let data_root = app.path().app_local_data_dir()?;
             performance::init(&data_root).map_err(std::io::Error::other)?;
