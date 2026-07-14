@@ -9,7 +9,9 @@ patch context, and the current draft state.
 The application supports Normal, Fearless, and Fearless (Hard) series,
 including live draft-rule detection and one to five bans per side.
 
-This reposit mainly serves the purpose of source-transparancy and source-sharing. If you are a casual user, download the executable from Steam workshop is the easist way for you, if you trust me, of course.
+This repository primarily serves to provide source transparency and source
+sharing. Casual users should download the executable from the Steam Workshop—it
+is the easiest option, provided you trust me, of course.
 
 ## Companion mods
 
@@ -25,7 +27,7 @@ used for manual draft exploration after data has been imported.
 
 - Live and manual draft recommendations.
 - Normal, Fearless, and Fearless (Hard) series rules.
-- Configurable one-to-five-ban manual drafts.
+- Manual drafts with one to five bans per side.
 - Role-aware champion statistics and role switching.
 - Tier list, player proficiency, synergy, matchup, and patch evidence.
 - Automatic live draft-mode and ban-count detection.
@@ -34,7 +36,7 @@ used for manual draft exploration after data has been imported.
 
 ## Privacy
 
-Recommendation scoring runs locally.Debug performance logging is disabled by
+Recommendation scoring runs locally. Debug performance logging is disabled by
 default and records only when Debug Mode is enabled in Settings.
 
 ## Requirements
@@ -87,13 +89,15 @@ selected translation is missing entries.
 
 See `translations/README-FIRST.txt` for the translation workflow.
 
-If you made a translation and want me to pack it along with the executable, send me the `<language-tag>/base.json of your language. Please ensure the quality of the translation, I don't want people get confused.
+If you have created a translation and want it packaged with the executable,
+send me your `<language-tag>/base.json` file. Please ensure that the translation
+is accurate and clear so users are not confused.
 
 ## Assets
 
-Teamfight Manager 2 names and game-derived artwork remain the property of their
-respective rights holders @TeamSamoyed. See `docs/asset-sources.md` for provenance and
-reproduction notes. Fonts retain their respective licenses.
+Teamfight Manager 2 names and game-derived artwork remain the property of Team
+Samoyed and their respective rights holders. See `docs/asset-sources.md` for
+provenance and reproduction notes. Fonts retain their respective licenses.
 
 ## License
 
