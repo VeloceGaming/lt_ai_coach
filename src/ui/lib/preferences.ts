@@ -54,6 +54,7 @@ export const defaultCustomTuning: DraftTuning = { ...STRATEGY_TUNING.balanced };
 export const preferencesStorageKey = "lt-ai-coach.preferences.v1";
 export const defaultUserPreferences: UserPreferences = {
   mode: "normal",
+  bansPerSide: 3,
   weights: defaultScoringWeights,
   strategy: "balanced",
   customTuning: defaultCustomTuning,
@@ -77,6 +78,7 @@ export function parseUserPreferences(stored: string | null): UserPreferences {
     const strategy = validateStrategy(value.strategy);
     return {
       mode: value.mode === "fearless" || value.mode === "fearless-hard" ? value.mode : "normal",
+      bansPerSide: validNumber(value.bansPerSide, 1, 5) && Number.isInteger(value.bansPerSide) ? value.bansPerSide : defaultUserPreferences.bansPerSide,
       weights: validateScoringWeights(value.weights),
       strategy,
       customTuning: validateDraftTuning(value.customTuning),

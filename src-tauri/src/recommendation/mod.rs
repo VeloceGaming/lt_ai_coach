@@ -53,9 +53,7 @@ const CLAIM_TIER_DELTA: f64 = 4.0;
 // side's marginal denial value is reduced.
 const REDUNDANT_BAN_DELTA: f64 = 8.0;
 const REDUNDANT_BAN_DISCOUNT_WEIGHT: f64 = 12.0;
-// Standard draft has 3 bans per side; used to judge whether Blue's pool of
-// acceptable first picks could still be banned out by Red's remaining bans.
-const BANS_PER_SIDE: usize = 3;
+const DEFAULT_BANS_PER_SIDE: usize = 3;
 
 const ROLE_CREDIBILITY_MIN_PROBABILITY: f64 = 0.15;
 const ROLE_CREDIBILITY_MIN_GAMES: usize = 5;
@@ -74,6 +72,8 @@ pub struct RecommendationRequest {
     pub red_bans: Vec<String>,
     pub blue_picks: Vec<String>,
     pub red_picks: Vec<String>,
+    #[serde(default = "default_bans_per_side")]
+    pub bans_per_side: usize,
     pub history_blue: Vec<String>,
     pub history_red: Vec<String>,
     #[serde(default)]
@@ -91,6 +91,10 @@ pub struct RecommendationRequest {
     /// and synergy are all evaluated as if that champion plays the chosen role.
     #[serde(default)]
     pub role_overrides: BTreeMap<String, String>,
+}
+
+fn default_bans_per_side() -> usize {
+    DEFAULT_BANS_PER_SIDE
 }
 
 #[derive(Clone, Default, Deserialize)]
@@ -516,7 +520,10 @@ fn build_shortlist_internal(
         .map(|recommendation| (recommendation.champion_id.as_str(), recommendation.score))
         .collect::<BTreeMap<_, _>>();
     let first_pick = first_pick_context(request, first_pick_candidates);
-    let red_bans_remaining = BANS_PER_SIDE.saturating_sub(request.red_bans.len());
+    let red_bans_remaining = request
+        .bans_per_side
+        .clamp(1, 5)
+        .saturating_sub(request.red_bans.len());
     // Stage 4B: when Blue's acceptable-pick pool has multiple comparable
     // candidates, Blue can still only claim one via its first pick. Model the
     // pool members' Red-side ban/pick values once, then compare "leave open"
@@ -2299,6 +2306,7 @@ mod tests {
             red_bans: vec![],
             blue_picks: vec![],
             red_picks: vec![],
+            bans_per_side: DEFAULT_BANS_PER_SIDE,
             history_blue: vec![],
             history_red: vec![],
             weights: ScoringWeights::default(),
@@ -2495,6 +2503,7 @@ mod tests {
             red_bans: vec![],
             blue_picks: vec![],
             red_picks: vec![],
+            bans_per_side: DEFAULT_BANS_PER_SIDE,
             history_blue: vec!["archer".to_string()],
             history_red: vec!["ghost".to_string()],
             weights: ScoringWeights::default(),
@@ -2525,6 +2534,7 @@ mod tests {
             red_bans: vec![],
             blue_picks: vec![],
             red_picks: vec![],
+            bans_per_side: DEFAULT_BANS_PER_SIDE,
             history_blue: vec![],
             history_red: vec![],
             weights: ScoringWeights::default(),
@@ -2686,6 +2696,7 @@ mod tests {
             red_bans: vec![],
             blue_picks: vec![],
             red_picks: vec![],
+            bans_per_side: DEFAULT_BANS_PER_SIDE,
             history_blue: vec![],
             history_red: vec![],
             weights: ScoringWeights::default(),
@@ -2939,6 +2950,7 @@ mod tests {
             red_bans: vec![],
             blue_picks: vec!["whip_master".to_string(), "demon".to_string()],
             red_picks: vec![],
+            bans_per_side: DEFAULT_BANS_PER_SIDE,
             history_blue: vec![],
             history_red: vec![],
             weights: ScoringWeights::default(),
@@ -3050,6 +3062,7 @@ mod tests {
             red_bans: vec![],
             blue_picks: picks.into_iter().map(str::to_string).collect(),
             red_picks: vec![],
+            bans_per_side: DEFAULT_BANS_PER_SIDE,
             history_blue: vec![],
             history_red: vec![],
             weights: ScoringWeights::default(),
@@ -3118,6 +3131,7 @@ mod tests {
             red_bans: vec![],
             blue_picks: vec!["whip_master".to_string(), "demon".to_string()],
             red_picks: vec!["shield_bearer".to_string(), "archer".to_string()],
+            bans_per_side: DEFAULT_BANS_PER_SIDE,
             history_blue: vec![],
             history_red: vec![],
             weights: ScoringWeights::default(),

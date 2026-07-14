@@ -144,6 +144,8 @@ struct AppStatus {
 #[serde(rename_all = "camelCase")]
 struct LiveRecommendationOptions {
     mode: String,
+    #[serde(default = "default_bans_per_side")]
+    bans_per_side: usize,
     #[serde(default)]
     weights: recommendation::ScoringWeights,
     #[serde(default)]
@@ -163,6 +165,10 @@ struct LiveRecommendationResponse {
 }
 
 fn default_minimum_interaction_games() -> usize {
+    3
+}
+
+fn default_bans_per_side() -> usize {
     3
 }
 
@@ -418,6 +424,10 @@ fn live_recommendation_request(
         red_bans: snapshot.red_bans.clone(),
         blue_picks: snapshot.blue_picks.clone(),
         red_picks: snapshot.red_picks.clone(),
+        bans_per_side: snapshot
+            .bans_per_side
+            .unwrap_or(options.bans_per_side)
+            .clamp(1, 5),
         history_blue: history(true),
         history_red: history(false),
         weights: options.weights,

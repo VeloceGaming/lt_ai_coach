@@ -9,7 +9,7 @@
 // preferences drawer instead of a local variable.
 
 import { create } from "zustand";
-import type { BridgeState, DraftAction, DraftState, GameRecord } from "../types";
+import type { BridgeState, DraftAction, DraftMode, DraftState, GameRecord } from "../types";
 import { actionTarget, currentDraftAction, emptyDraft, removeLatestAction, unavailableReason } from "../lib/draft";
 import { usePreferencesStore } from "./usePreferencesStore";
 
@@ -28,7 +28,7 @@ type DraftStoreState = {
   // Adds a champion to the slot named by `action`. Returns false (and changes
   // nothing) when the champion is unavailable, so the caller knows whether to
   // close the picker.
-  pushChampion: (championId: string, action: DraftAction) => boolean;
+  pushChampion: (championId: string, action: DraftAction, bansPerSide?: number, mode?: DraftMode) => boolean;
   removeChampion: (target: keyof DraftState, championId: string) => void;
   undo: () => void;
   resetCurrent: () => void;
@@ -76,10 +76,9 @@ export const useDraftStore = create<DraftStoreState>((set, get) => ({
     return { roleOverrides: next };
   }),
 
-  pushChampion: (championId, action) => {
+  pushChampion: (championId, action, bansPerSide = usePreferencesStore.getState().bansPerSide, mode = usePreferencesStore.getState().mode) => {
     const { draft, history } = get();
-    const mode = usePreferencesStore.getState().mode;
-    const reason = unavailableReason(championId, action, mode, draft);
+    const reason = unavailableReason(championId, action, mode, draft, bansPerSide);
     if (reason) return false;
     const next = structuredClone(draft);
     actionTarget(next, action).push(championId);

@@ -31,7 +31,8 @@ function fallbackChampionName(id: string) {
 
 export function DraftBoard({ catalog, recommendationsEnabled, tiers, currentPatch, athletes = [], compact = false }: { catalog: DraftCatalog; recommendationsEnabled: boolean; tiers: Record<string, string>; currentPatch?: string; athletes?: AthleteSummary[]; compact?: boolean }) {
   const t = useT();
-  const mode = usePreferencesStore((s) => s.mode);
+  const configuredMode = usePreferencesStore((s) => s.mode);
+  const configuredBansPerSide = usePreferencesStore((s) => s.bansPerSide);
   const setMode = usePreferencesStore((s) => s.setMode);
   const autoOverlay = usePreferencesStore((s) => s.autoOverlay);
   const setAutoOverlay = usePreferencesStore((s) => s.setAutoOverlay);
@@ -76,12 +77,16 @@ export function DraftBoard({ catalog, recommendationsEnabled, tiers, currentPatc
   const setBridgeContext = useOverlayStore((s) => s.setBridgeContext);
   const liveRevision = useOverlayStore((s) => s.liveRevision);
   const liveContextRevision = useOverlayStore((s) => s.liveContextRevision);
+  const liveBansPerSide = useOverlayStore((s) => s.bansPerSide);
+  const liveDraftMode = useOverlayStore((s) => s.draftMode);
   const setLiveRevision = useOverlayStore((s) => s.setLiveRevision);
   const lastBridgeRevision = useRef(-1);
   const lastBridgeContextRevision = useRef(-1);
   const poolSearchRef = useRef<HTMLInputElement>(null);
+  const mode = bridgeConnected ? liveDraftMode ?? configuredMode : configuredMode;
   const isFearless = mode !== "normal";
-  const turn = calculateDraftTurn(draft);
+  const bansPerSide = bridgeConnected ? liveBansPerSide ?? configuredBansPerSide : configuredBansPerSide;
+  const turn = calculateDraftTurn(draft, bansPerSide);
   const side = userSide ?? (!("__TAURI_INTERNALS__" in window) ? "blue" : null);
   const recommendationSide = side;
   // boardActiveAction: armed slot when user clicked one manually; otherwise the
@@ -251,13 +256,13 @@ export function DraftBoard({ catalog, recommendationsEnabled, tiers, currentPatc
     const timer = window.setTimeout(() => {
       const live = bridgeConnected && userSide !== null;
       const request = live
-        ? invoke<LiveRecommendationResponse>("get_live_recommendations", { options: { mode, weights, tuning, minimumInteractionGames, roleOverrides } })
+        ? invoke<LiveRecommendationResponse>("get_live_recommendations", { options: { mode, bansPerSide, weights, tuning, minimumInteractionGames, roleOverrides } })
             .then((response) => {
               if (!active || response.sourceRevision !== liveRevision || response.sourceContextRevision !== liveContextRevision) return;
               setRecommendations(response.shortlist);
               setRecommendationError(null);
             })
-        : invoke<RecommendationShortlist>("get_recommendations", { request: { mode, side: recommendationSide, weights, tuning, minimumInteractionGames, blueLineup, redLineup, roleOverrides, ...draft } })
+        : invoke<RecommendationShortlist>("get_recommendations", { request: { mode, side: recommendationSide, bansPerSide, weights, tuning, minimumInteractionGames, blueLineup, redLineup, roleOverrides, ...draft } })
             .then((shortlist) => { if (active) { setRecommendations(shortlist); setRecommendationError(null); } });
       request
         .catch((e) => {
@@ -271,7 +276,7 @@ export function DraftBoard({ catalog, recommendationsEnabled, tiers, currentPatc
         });
     }, 120);
     return () => { active = false; window.clearTimeout(timer); };
-  }, [draft, mode, recommendationSide, weights, tuning, minimumInteractionGames, blueLineup, redLineup, roleOverrides, bridgeConnected, userSide, liveRevision, liveContextRevision, recommendationsEnabled, tiers]);
+  }, [draft, mode, bansPerSide, recommendationSide, weights, tuning, minimumInteractionGames, blueLineup, redLineup, roleOverrides, bridgeConnected, userSide, liveRevision, liveContextRevision, recommendationsEnabled, tiers]);
 
   useEffect(() => { if (mode === "normal") clearSeriesProgress(); }, [mode]);
 
@@ -290,7 +295,7 @@ export function DraftBoard({ catalog, recommendationsEnabled, tiers, currentPatc
   }
 
   function applyChampion(championId: string) {
-    if (pushChampion(championId, targetAction)) disarmSlot();
+    if (pushChampion(championId, targetAction, bansPerSide, mode)) disarmSlot();
   }
 
   if (compact) {
@@ -305,6 +310,7 @@ export function DraftBoard({ catalog, recommendationsEnabled, tiers, currentPatc
       champions={champions}
       userSide={side}
       currentGame={currentGame}
+      bansPerSide={bansPerSide}
       roleOverrides={roleOverrides}
       onConfirmRole={setRoleOverride}
       onClearRole={clearRoleOverride}
@@ -323,7 +329,7 @@ export function DraftBoard({ catalog, recommendationsEnabled, tiers, currentPatc
       <header className="full-draft-topbar">
         <div className="draft-brand"><IconBrain size={18} stroke={2.2} /><strong>LT AI Coach</strong>{bridgeConnected && <span className="bridge-live" title={t("draft.bridgeLiveTooltip")}>{t("draft.liveBadge")}</span>}</div>
         <div className="draft-top-actions">
-          <div className="draft-mode-toggle" aria-label={t("draft.modeAria")}>{(["normal", "fearless", "fearless-hard"] as DraftMode[]).map((value) => <button type="button" key={value} className={mode === value ? "active" : ""} onClick={() => setMode(value)}>{value === "normal" ? t("draft.mode.normal") : value === "fearless" ? t("draft.mode.fearless") : t("draft.mode.hard")}</button>)}</div>
+          <div className="draft-mode-toggle" aria-label={t("draft.modeAria")}>{(["normal", "fearless", "fearless-hard"] as DraftMode[]).map((value) => <button type="button" key={value} className={mode === value ? "active" : ""} disabled={bridgeConnected && liveDraftMode !== null} onClick={() => setMode(value)}>{value === "normal" ? t("draft.mode.normal") : value === "fearless" ? t("draft.mode.fearless") : t("draft.mode.hard")}</button>)}</div>
           <button type="button" className="draft-toolbar-button draft-reset-button" onClick={mode === "normal" ? resetCurrent : resetSeries}><IconRefresh size={15} />{mode === "normal" ? t("draft.newDraft") : t("draft.newSeries")}</button>
           {currentPatch && <span className="draft-patch-chip">{t("draft.patchChipPrefix")} {currentPatch}</span>}
           <button type="button" className="draft-toolbar-button draft-toolbar-icon" title={t("draft.showOverlayTooltip")} onClick={() => void showOverlayWindow()}><IconMaximize size={15} /></button>
@@ -338,7 +344,7 @@ export function DraftBoard({ catalog, recommendationsEnabled, tiers, currentPatc
       </div>
 
       <div className="full-draft-layout">
-        <FullDraftSide part="picks" side="blue" isUser={side === "blue"} bans={draft.blueBans} picks={draft.bluePicks} champions={champions} activeAction={boardActiveAction} onRemove={removeChampion} onSlotClick={armSlot} lineup={blueLineup} athleteNames={athleteNames} />
+        <FullDraftSide part="picks" side="blue" isUser={side === "blue"} bansPerSide={bansPerSide} bans={draft.blueBans} picks={draft.bluePicks} champions={champions} activeAction={boardActiveAction} onRemove={removeChampion} onSlotClick={armSlot} lineup={blueLineup} athleteNames={athleteNames} />
         <main className="draft-coach-column">
           <div className="draft-recommendation-toolbar">
             <label>
@@ -351,7 +357,7 @@ export function DraftBoard({ catalog, recommendationsEnabled, tiers, currentPatc
                 onChange={(e) => setPoolSearch(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key !== "Enter") return;
-                  const first = filteredPool.find((c) => !unavailableReason(c.id, targetAction, mode, draft));
+                  const first = filteredPool.find((c) => !unavailableReason(c.id, targetAction, mode, draft, bansPerSide));
                   if (first) applyChampion(first.id);
                 }}
               />
@@ -367,7 +373,7 @@ export function DraftBoard({ catalog, recommendationsEnabled, tiers, currentPatc
             ) : (
               <div className="inline-champion-pool">
                 {filteredPool.map((champion) => {
-                  const reason = unavailableReason(champion.id, targetAction, mode, draft);
+                  const reason = unavailableReason(champion.id, targetAction, mode, draft, bansPerSide);
                   return <button type="button" key={champion.id} className="champion-pool-card" disabled={Boolean(reason)} title={reason ? t(reason) : champion.name} onClick={() => applyChampion(champion.id)}><ChampionPortraitView portrait={champion.portrait} /><span>{champion.name}</span></button>;
                 })}
               </div>
@@ -385,12 +391,12 @@ export function DraftBoard({ catalog, recommendationsEnabled, tiers, currentPatc
           )}
           <CompAnalysis picks={side === "blue" ? draft.bluePicks : side === "red" ? draft.redPicks : []} />
         </main>
-        <FullDraftSide part="picks" side="red" isUser={side === "red"} bans={draft.redBans} picks={draft.redPicks} champions={champions} activeAction={boardActiveAction} onRemove={removeChampion} onSlotClick={armSlot} lineup={redLineup} athleteNames={athleteNames} />
+        <FullDraftSide part="picks" side="red" isUser={side === "red"} bansPerSide={bansPerSide} bans={draft.redBans} picks={draft.redPicks} champions={champions} activeAction={boardActiveAction} onRemove={removeChampion} onSlotClick={armSlot} lineup={redLineup} athleteNames={athleteNames} />
       </div>
 
       <div className="draft-bans-strip">
-        <FullDraftSide part="bans" side="blue" isUser={side === "blue"} bans={draft.blueBans} picks={draft.bluePicks} champions={champions} activeAction={boardActiveAction} onRemove={removeChampion} onSlotClick={armSlot} />
-        <FullDraftSide part="bans" side="red" isUser={side === "red"} bans={draft.redBans} picks={draft.redPicks} champions={champions} activeAction={boardActiveAction} onRemove={removeChampion} onSlotClick={armSlot} />
+        <FullDraftSide part="bans" side="blue" isUser={side === "blue"} bansPerSide={bansPerSide} bans={draft.blueBans} picks={draft.bluePicks} champions={champions} activeAction={boardActiveAction} onRemove={removeChampion} onSlotClick={armSlot} />
+        <FullDraftSide part="bans" side="red" isUser={side === "red"} bansPerSide={bansPerSide} bans={draft.redBans} picks={draft.redPicks} champions={champions} activeAction={boardActiveAction} onRemove={removeChampion} onSlotClick={armSlot} />
       </div>
 
       {slotSelected ? (

@@ -13,6 +13,7 @@ import { loadUserPreferences, saveUserPreferences } from "../lib/preferences";
 
 type PreferencesState = UserPreferences & {
   setMode: (mode: DraftMode) => void;
+  setBansPerSide: (value: number) => void;
   setWeight: (key: keyof ScoringWeights, value: number) => void;
   setStrategy: (strategy: DraftStrategy) => void;
   setCustomTuning: (key: keyof DraftTuning, value: number) => void;
@@ -26,6 +27,7 @@ type PreferencesState = UserPreferences & {
 function persist(state: PreferencesState) {
   saveUserPreferences({
     mode: state.mode,
+    bansPerSide: state.bansPerSide,
     weights: state.weights,
     strategy: state.strategy,
     customTuning: state.customTuning,
@@ -38,6 +40,7 @@ function persist(state: PreferencesState) {
 export const usePreferencesStore = create<PreferencesState>((set, get) => ({
   ...loadUserPreferences(),
   setMode: (mode) => { set({ mode }); persist(get()); },
+  setBansPerSide: (value) => { set({ bansPerSide: Math.max(1, Math.min(5, Math.round(value))) }); persist(get()); },
   setWeight: (key, value) => { set({ weights: { ...get().weights, [key]: value } }); persist(get()); },
   setStrategy: (strategy) => { set({ strategy }); persist(get()); },
   setCustomTuning: (key, value) => {

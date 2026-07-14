@@ -18,14 +18,16 @@ export function translateRecommendationError(message: string, t: (key: string) =
   return message === WAITING_FOR_CONTEXT_MESSAGE ? t("draft.waitingForContext") : message;
 }
 
-export function calculateDraftTurn(draft: Pick<DraftState, "blueBans" | "redBans" | "bluePicks" | "redPicks">): DraftTurn {
-  const blueBans = Math.min(draft.blueBans.length, 3);
-  const redBans = Math.min(draft.redBans.length, 3);
-  if (blueBans < 3 || redBans < 3) {
-    const side: DraftSide = blueBans <= redBans && blueBans < 3 ? "blue" : "red";
+export function calculateDraftTurn(draft: Pick<DraftState, "blueBans" | "redBans" | "bluePicks" | "redPicks">, bansPerSide = 3): DraftTurn {
+  const banLimit = Math.max(1, Math.min(5, Math.round(bansPerSide)));
+  const blueBans = Math.min(draft.blueBans.length, banLimit);
+  const redBans = Math.min(draft.redBans.length, banLimit);
+  if (blueBans < banLimit || redBans < banLimit) {
+    const side: DraftSide = blueBans <= redBans && blueBans < banLimit ? "blue" : "red";
     const ordinal = (side === "blue" ? blueBans : redBans) + 1;
     const actionNumber = blueBans + redBans + 1;
-    return { phase: "ban", side, ordinal, actionNumber, totalActions: 6, label: `${titleCase(side)} ban ${ordinal}`, progress: `Ban ${actionNumber}/6` };
+    const totalActions = banLimit * 2;
+    return { phase: "ban", side, ordinal, actionNumber, totalActions, label: `${titleCase(side)} ban ${ordinal}`, progress: `Ban ${actionNumber}/${totalActions}` };
   }
 
   const bluePicks = Math.min(draft.bluePicks.length, 5);
@@ -41,7 +43,8 @@ export function calculateDraftTurn(draft: Pick<DraftState, "blueBans" | "redBans
   if (redPicks < 4) return pickTurn("red");
   if (bluePicks < 5) return pickTurn("blue");
   if (redPicks < 5) return pickTurn("red");
-  return { phase: "complete", side: null, ordinal: 0, actionNumber: 16, totalActions: 16, label: "Draft complete", progress: "16/16 actions" };
+  const totalActions = banLimit * 2 + 10;
+  return { phase: "complete", side: null, ordinal: 0, actionNumber: totalActions, totalActions, label: "Draft complete", progress: `${totalActions}/${totalActions} actions` };
 }
 
 // Returns a translation key (not English text) — call t() on the result.
@@ -69,12 +72,13 @@ export function actionTarget(draft: DraftState, action: DraftAction): string[] {
 // Returns a translation key (not English text) when unavailable, else null.
 // Callers that only need the truthiness (e.g. useDraftStore) can ignore the
 // key's meaning; callers that display it (DraftBoard) should call t() on it.
-export function unavailableReason(championId: string, action: DraftAction, mode: DraftMode, draft: DraftState) {
+export function unavailableReason(championId: string, action: DraftAction, mode: DraftMode, draft: DraftState, bansPerSide = 3) {
+  const banLimit = Math.max(1, Math.min(5, Math.round(bansPerSide)));
   const current = [...draft.blueBans, ...draft.redBans, ...draft.bluePicks, ...draft.redPicks];
   if ((action.includes("ban") || action.includes("pick")) && current.includes(championId)) return "draft.unavailable.alreadyUsed";
   if (mode === "fearless-hard" && (draft.historyBlue.includes(championId) || draft.historyRed.includes(championId))) return "draft.unavailable.fearlessHardHistory";
-  if (action === "blue-ban" && draft.blueBans.length >= 3) return "draft.unavailable.blueBansFull";
-  if (action === "red-ban" && draft.redBans.length >= 3) return "draft.unavailable.redBansFull";
+  if (action === "blue-ban" && draft.blueBans.length >= banLimit) return "draft.unavailable.blueBansFull";
+  if (action === "red-ban" && draft.redBans.length >= banLimit) return "draft.unavailable.redBansFull";
   if (action === "blue-pick" && draft.bluePicks.length >= 5) return "draft.unavailable.bluePicksFull";
   if (action === "red-pick" && draft.redPicks.length >= 5) return "draft.unavailable.redPicksFull";
   if (action === "history-blue" && draft.historyBlue.includes(championId)) return "draft.unavailable.alreadyBlueHistory";
@@ -83,4 +87,3 @@ export function unavailableReason(championId: string, action: DraftAction, mode:
   if (action === "red-pick" && mode !== "normal") { if (draft.historyRed.includes(championId)) return "draft.unavailable.blockedByRedHistory"; if (mode === "fearless-hard" && draft.historyBlue.includes(championId)) return "draft.unavailable.blockedByBlueHistory"; }
   return null;
 }
-

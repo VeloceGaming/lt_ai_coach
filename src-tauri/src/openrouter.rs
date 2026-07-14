@@ -593,7 +593,7 @@ fn build_evidence_payload(
                 "redPicks": request.draft.red_picks
             },
             "formatFacts": {
-                "bansPerSide": 3,
+                "bansPerSide": request.bans_per_side,
                 "picksPerSide": 5,
                 "pickSideSequence": [
                     "blue", "red", "red", "blue", "blue",

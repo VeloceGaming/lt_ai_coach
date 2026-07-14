@@ -320,6 +320,8 @@ export type BridgeState = {
   redBans: string[];
   bluePicks: string[];
   redPicks: string[];
+  bansPerSide: number | null;
+  draftMode: DraftMode | null;
   contextRevision: number;
   matchId: number | null;
   setNumber: number | null;
@@ -352,4 +354,4 @@ export type DraftTuning = {
   winRatePriorGames: number;
 };
 
-export type UserPreferences = { mode: DraftMode; weights: ScoringWeights; strategy: DraftStrategy; customTuning: DraftTuning; minimumInteractionGames: number; compactMode: boolean; autoOverlay: boolean };
+export type UserPreferences = { mode: DraftMode; bansPerSide: number; weights: ScoringWeights; strategy: DraftStrategy; customTuning: DraftTuning; minimumInteractionGames: number; compactMode: boolean; autoOverlay: boolean };

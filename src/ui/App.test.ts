@@ -7,6 +7,7 @@ describe("parseUserPreferences", () => {
   it("restores saved draft and scoring preferences", () => {
     expect(parseUserPreferences(JSON.stringify({
       mode: "fearless-hard",
+      bansPerSide: 5,
       weights: {
         performance: 40,
         synergy: 25,
@@ -18,6 +19,7 @@ describe("parseUserPreferences", () => {
       compactMode: true,
     }))).toEqual({
       mode: "fearless-hard",
+      bansPerSide: 5,
       weights: {
         performance: 40,
         synergy: 25,
@@ -37,6 +39,7 @@ describe("parseUserPreferences", () => {
   it("falls back when storage is malformed", () => {
     expect(parseUserPreferences("{invalid")).toMatchObject({
       mode: "normal",
+      bansPerSide: 3,
       minimumInteractionGames: 3,
       compactMode: false,
     });
@@ -52,6 +55,7 @@ describe("parseUserPreferences", () => {
       minimumInteractionGames: -1,
     }))).toEqual({
       mode: "normal",
+      bansPerSide: 3,
       weights: {
         performance: 50,
         synergy: 35,
@@ -107,6 +111,21 @@ describe("calculateDraftTurn", () => {
       ordinal: 0,
       actionNumber: 16,
       totalActions: 16,
+    });
+  });
+
+  it.each([1, 2, 3, 4, 5])("supports %i bans per side", (bansPerSide) => {
+    expect(calculateDraftTurn(state(bansPerSide - 1, bansPerSide - 1), bansPerSide)).toMatchObject({
+      phase: "ban",
+      side: "blue",
+      ordinal: bansPerSide,
+      totalActions: bansPerSide * 2,
+    });
+    expect(calculateDraftTurn(state(bansPerSide, bansPerSide), bansPerSide)).toMatchObject({ phase: "pick", side: "blue" });
+    expect(calculateDraftTurn(state(bansPerSide, bansPerSide, 5, 5), bansPerSide)).toMatchObject({
+      phase: "complete",
+      actionNumber: bansPerSide * 2 + 10,
+      totalActions: bansPerSide * 2 + 10,
     });
   });
 });

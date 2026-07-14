@@ -95,8 +95,10 @@ export function SettingsScreen() {
   }
 
   const strategy = usePreferencesStore((s) => s.strategy);
+  const bansPerSide = usePreferencesStore((s) => s.bansPerSide);
   const customTuning = usePreferencesStore((s) => s.customTuning);
   const setStrategy = usePreferencesStore((s) => s.setStrategy);
+  const setBansPerSide = usePreferencesStore((s) => s.setBansPerSide);
   const setCustomTuning = usePreferencesStore((s) => s.setCustomTuning);
   const weights = usePreferencesStore((s) => s.weights);
   const setWeight = usePreferencesStore((s) => s.setWeight);
@@ -199,6 +201,13 @@ export function SettingsScreen() {
 
     <section className="settings-section">
       <div className="settings-section-head"><span className="eyebrow">{t("settings.section.coach")}</span><h2>{t("settings.section.draftStrategy")}</h2></div>
+
+      <div className="settings-row">
+        <div className="settings-label"><strong>{t("settings.bansPerSide.label")}</strong><span>{t("settings.bansPerSide.desc")}</span></div>
+        <div className="settings-segmented" role="group" aria-label={t("settings.bansPerSide.label")}>
+          {[1, 2, 3, 4, 5].map((value) => <button type="button" key={value} className={bansPerSide === value ? "active" : ""} aria-pressed={bansPerSide === value} onClick={() => setBansPerSide(value)}>{value}</button>)}
+        </div>
+      </div>
 
       <div className="settings-row column">
         <div className="settings-label">

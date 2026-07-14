@@ -4,6 +4,8 @@
 //! |<red picks>` (champion ids, comma-separated, slot order) about once a
 //! second while a draft is on screen. It also sends `LTAC2PHASE|<phase>` for
 //! non-draft UI phases the app cares about, such as the stadium entrance.
+//! `LTAC2RULES|<bans per side>` carries the live 1–5 ban format.
+//! `LTAC2MODE|<mode>` carries the cached live draft mode.
 //! `LTAC2CTX|...` packets add the current match/set plus resolved blue/red
 //! database team IDs and fixed-role starter athlete IDs.
 
@@ -37,6 +39,11 @@ pub struct BridgeState {
     pub red_bans: Vec<String>,
     pub blue_picks: Vec<String>,
     pub red_picks: Vec<String>,
+    /// Authoritative ban-slot count reported by the game bridge (1..=5).
+    /// None keeps compatibility with older bridge versions.
+    pub bans_per_side: Option<usize>,
+    /// Authoritative live mode reported by the bridge, when available.
+    pub draft_mode: Option<String>,
     pub context_revision: u64,
     pub match_id: Option<usize>,
     pub set_number: Option<usize>,
@@ -162,6 +169,24 @@ fn listen(
             // window resets its own local series state at the same moment.
             if entered_stadium_entrance {
                 let _ = app.emit("draft-series-reset", ());
+            }
+            continue;
+        }
+        if let Some(bans_per_side) = parse_rules_packet(packet) {
+            if let Ok(mut current) = state.lock() {
+                if current.bans_per_side != Some(bans_per_side) {
+                    current.bans_per_side = Some(bans_per_side);
+                    current.context_revision = current.context_revision.wrapping_add(1);
+                }
+            }
+            continue;
+        }
+        if let Some(draft_mode) = parse_mode_packet(packet) {
+            if let Ok(mut current) = state.lock() {
+                if current.draft_mode.as_deref() != Some(draft_mode) {
+                    current.draft_mode = Some(draft_mode.to_string());
+                    current.context_revision = current.context_revision.wrapping_add(1);
+                }
             }
             continue;
         }
@@ -367,6 +392,16 @@ fn parse_phase_packet(packet: &str) -> Option<&str> {
     }
 }
 
+fn parse_rules_packet(packet: &str) -> Option<usize> {
+    let bans_per_side = packet.trim().strip_prefix("LTAC2RULES|")?.parse().ok()?;
+    (1..=5).contains(&bans_per_side).then_some(bans_per_side)
+}
+
+fn parse_mode_packet(packet: &str) -> Option<&str> {
+    let mode = packet.trim().strip_prefix("LTAC2MODE|")?;
+    matches!(mode, "normal" | "fearless" | "fearless-hard").then_some(mode)
+}
+
 // Champion-tags packet: `LTAC2TAGS|<id>:<tag>,<tag>;<id>:<tag>...`. Returns the
 // parsed map, or None if this isn't a tags packet.
 fn parse_tags_packet(packet: &str) -> Option<BTreeMap<String, Vec<String>>> {
@@ -476,6 +511,23 @@ mod tests {
         );
         assert_eq!(parse_phase_packet("LTAC2PHASE|draft"), Some("draft"));
         assert_eq!(parse_phase_packet("LTAC2PHASE|nonsense"), None);
+    }
+
+    #[test]
+    fn parses_ban_count_rules() {
+        assert_eq!(parse_rules_packet("LTAC2RULES|1"), Some(1));
+        assert_eq!(parse_rules_packet("LTAC2RULES|5"), Some(5));
+        assert_eq!(parse_rules_packet("LTAC2RULES|0"), None);
+        assert_eq!(parse_rules_packet("LTAC2RULES|6"), None);
+        assert_eq!(parse_rules_packet("LTAC2RULES|three"), None);
+    }
+
+    #[test]
+    fn parses_live_draft_modes() {
+        assert_eq!(parse_mode_packet("LTAC2MODE|normal"), Some("normal"));
+        assert_eq!(parse_mode_packet("LTAC2MODE|fearless"), Some("fearless"));
+        assert_eq!(parse_mode_packet("LTAC2MODE|fearless-hard"), Some("fearless-hard"));
+        assert_eq!(parse_mode_packet("LTAC2MODE|custom"), None);
     }
 
     #[test]

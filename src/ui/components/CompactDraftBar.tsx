@@ -15,7 +15,7 @@ import { translateRecommendationError, translateTurnLabel } from "../lib/draft";
 import { useT } from "../stores/useI18nStore";
 import { IconRefresh, IconX } from "@tabler/icons-react";
 
-export function CompactDraftBar({ mode, bridgeConnected, turn, draft, recommendations, recommendationError, recommendationsEnabled, champions, userSide, currentGame, roleOverrides, onConfirmRole, onClearRole, onClose, onResetSeries, tiers }: {
+export function CompactDraftBar({ mode, bridgeConnected, turn, draft, recommendations, recommendationError, recommendationsEnabled, champions, userSide, currentGame, bansPerSide, roleOverrides, onConfirmRole, onClearRole, onClose, onResetSeries, tiers }: {
   mode: DraftMode;
   bridgeConnected: boolean;
   turn: DraftTurn;
@@ -26,6 +26,7 @@ export function CompactDraftBar({ mode, bridgeConnected, turn, draft, recommenda
   champions: Map<string, DraftChampion>;
   userSide: DraftSide | null;
   currentGame: number;
+  bansPerSide: number;
   roleOverrides: Record<string, string>;
   onConfirmRole: (championId: string, role: string) => void;
   onClearRole: (championId: string) => void;
@@ -105,8 +106,8 @@ export function CompactDraftBar({ mode, bridgeConnected, turn, draft, recommenda
     ) : (
       <div className="compact-thirds">
         <div className="compact-board">
-          <CompactTeamSlots side="blue" label={`${t("draft.side.blue")} ${phase === "ban" ? t("compact.bansWord") : t("compact.picksWord")}`} ids={phase === "ban" ? draft.blueBans : draft.bluePicks} limit={phase === "ban" ? 3 : 5} champions={champions} active={turn.side === "blue" && turn.phase !== "complete"} selected={userSide === "blue"} roles={userSide === "blue" && phase === "pick" ? myRoles : undefined} overrides={userSide === "blue" ? roleOverrides : undefined} interactive={canConfirmRoles && userSide === "blue"} onSlotActivate={openRolePicker} />
-          <CompactTeamSlots side="red" label={`${t("draft.side.red")} ${phase === "ban" ? t("compact.bansWord") : t("compact.picksWord")}`} ids={phase === "ban" ? draft.redBans : draft.redPicks} limit={phase === "ban" ? 3 : 5} champions={champions} active={turn.side === "red" && turn.phase !== "complete"} selected={userSide === "red"} roles={userSide === "red" && phase === "pick" ? myRoles : undefined} overrides={userSide === "red" ? roleOverrides : undefined} interactive={canConfirmRoles && userSide === "red"} onSlotActivate={openRolePicker} />
+          <CompactTeamSlots side="blue" label={`${t("draft.side.blue")} ${phase === "ban" ? t("compact.bansWord") : t("compact.picksWord")}`} ids={phase === "ban" ? draft.blueBans : draft.bluePicks} limit={phase === "ban" ? bansPerSide : 5} champions={champions} active={turn.side === "blue" && turn.phase !== "complete"} selected={userSide === "blue"} roles={userSide === "blue" && phase === "pick" ? myRoles : undefined} overrides={userSide === "blue" ? roleOverrides : undefined} interactive={canConfirmRoles && userSide === "blue"} onSlotActivate={openRolePicker} />
+          <CompactTeamSlots side="red" label={`${t("draft.side.red")} ${phase === "ban" ? t("compact.bansWord") : t("compact.picksWord")}`} ids={phase === "ban" ? draft.redBans : draft.redPicks} limit={phase === "ban" ? bansPerSide : 5} champions={champions} active={turn.side === "red" && turn.phase !== "complete"} selected={userSide === "red"} roles={userSide === "red" && phase === "pick" ? myRoles : undefined} overrides={userSide === "red" ? roleOverrides : undefined} interactive={canConfirmRoles && userSide === "red"} onSlotActivate={openRolePicker} />
         </div>
 
         <div className="compact-detail">

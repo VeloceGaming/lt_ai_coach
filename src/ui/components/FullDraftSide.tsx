@@ -12,6 +12,7 @@ const ROLE_ORDER = ["top", "jungle", "mid", "bot", "support"] as const;
 type FullDraftSideProps = {
   side: DraftSide;
   part: "bans" | "picks";
+  bansPerSide: number;
   isUser: boolean;
   bans: string[];
   picks: string[];
@@ -23,14 +24,14 @@ type FullDraftSideProps = {
   athleteNames?: Map<number, string>;
 };
 
-export function FullDraftSide({ side, part, isUser, bans, picks, champions, activeAction, onRemove, onSlotClick, lineup, athleteNames }: FullDraftSideProps) {
+export function FullDraftSide({ side, part, bansPerSide, isUser, bans, picks, champions, activeAction, onRemove, onSlotClick, lineup, athleteNames }: FullDraftSideProps) {
   const t = useT();
   const sideLabel = t(`draft.side.${side}`);
   const banAction: DraftAction = `${side}-ban`;
   const pickAction: DraftAction = `${side}-pick`;
   const bansTarget: keyof DraftState = side === "blue" ? "blueBans" : "redBans";
   const picksTarget: keyof DraftState = side === "blue" ? "bluePicks" : "redPicks";
-  const banSlots = [...bans, ...Array(Math.max(0, 3 - bans.length)).fill(null)] as Array<string | null>;
+  const banSlots = [...bans.slice(0, bansPerSide), ...Array(Math.max(0, bansPerSide - bans.length)).fill(null)] as Array<string | null>;
   const pickSlots = [...picks, ...Array(Math.max(0, 5 - picks.length)).fill(null)] as Array<string | null>;
   const activeBanIndex = activeAction === banAction ? bans.length : -1;
   const activePickIndex = activeAction === pickAction ? picks.length : -1;

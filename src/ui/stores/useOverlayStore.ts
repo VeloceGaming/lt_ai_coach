@@ -8,7 +8,7 @@
 // lifecycle; only the shared state lives here.
 
 import { create } from "zustand";
-import type { BridgeState, DraftLineup, DraftSide, GameRecord } from "../types";
+import type { BridgeState, DraftLineup, DraftMode, DraftSide, GameRecord } from "../types";
 
 type OverlayState = {
   bridgeConnected: boolean;
@@ -17,10 +17,12 @@ type OverlayState = {
   blueLineup: DraftLineup | null;
   redLineup: DraftLineup | null;
   completedGames: GameRecord[];
+  bansPerSide: number | null;
+  draftMode: DraftMode | null;
   liveRevision: number;
   liveContextRevision: number;
   setLiveRevision: (revision: number) => void;
-  setBridgeContext: (bridge: Pick<BridgeState, "contextRevision" | "userSide" | "blueStarters" | "redStarters" | "completedGames">) => void;
+  setBridgeContext: (bridge: Pick<BridgeState, "contextRevision" | "userSide" | "blueStarters" | "redStarters" | "completedGames" | "bansPerSide" | "draftMode">) => void;
   // Live champion -> tags from the bridge mod (empty until a tags packet arrives).
   championTags: Record<string, string[]>;
   setChampionTags: (tags: Record<string, string[]>) => void;
@@ -33,6 +35,8 @@ export const useOverlayStore = create<OverlayState>((set) => ({
   blueLineup: null,
   redLineup: null,
   completedGames: [],
+  bansPerSide: null,
+  draftMode: null,
   liveRevision: 0,
   liveContextRevision: 0,
   setLiveRevision: (revision) => set((state) => state.liveRevision === revision ? state : { liveRevision: revision }),
@@ -45,6 +49,8 @@ export const useOverlayStore = create<OverlayState>((set) => ({
       blueLineup: lineup(bridge.blueStarters),
       redLineup: lineup(bridge.redStarters),
       completedGames: bridge.completedGames,
+      bansPerSide: bridge.bansPerSide,
+      draftMode: bridge.draftMode,
       liveContextRevision: bridge.contextRevision,
     });
   },

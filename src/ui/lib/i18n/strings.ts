@@ -368,6 +368,8 @@ export const en: Record<string, string> = {
 
   "settings.section.coach": "COACH",
   "settings.section.draftStrategy": "Draft Strategy",
+  "settings.bansPerSide.label": "Bans per side",
+  "settings.bansPerSide.desc": "Number of ban slots for manual drafts. Live drafts use the game’s configured count when the bridge provides it.",
 
   "settings.strategy.label": "Strategy",
   "settings.strategy.desc": "Controls how the engine weighs patch changes and unproven champions.",
