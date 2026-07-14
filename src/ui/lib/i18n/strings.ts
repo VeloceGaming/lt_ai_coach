@@ -4,9 +4,7 @@
 // only needs to cover the keys it wants to override — anything missing here
 // falls back to this English text automatically.
 //
-// Stage 1 covered the Settings screen only; Stage 2 (in progress) is
-// converting the rest of the app screen by screen. See
-// docs/ui-modernization-notes.md.
+// English is the permanent fallback for every translated screen.
 export const en: Record<string, string> = {
   "nav.aria": "Main navigation",
   "nav.import.label": "Import / Status",

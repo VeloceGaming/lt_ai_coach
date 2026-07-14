@@ -8,8 +8,8 @@ export const emptyDraft: DraftState = { blueBans: [], redBans: [], bluePicks: []
 
 // The one recommendation-error message DraftBoard sets itself (not a raw
 // backend error string) — kept as a constant so the display side can swap in
-// a translated string for exactly this message. Backend error text passes
-// through untranslated (out of scope; see docs/ui-modernization-notes.md).
+// a translated string for exactly this message. Raw backend errors pass
+// through unchanged so their diagnostic details remain intact.
 export const WAITING_FOR_CONTEXT_MESSAGE = "Waiting for live team context.";
 
 // Swaps in the translated string for WAITING_FOR_CONTEXT_MESSAGE; any other

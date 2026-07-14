@@ -3,6 +3,7 @@ name = "lt-ai-coach"
 version = "1.0.0"
 description = "Role-aware Teamfight Manager 2 draft companion"
 authors = ["LT"]
+license = "GPL-3.0-only"
 edition = "2021"
 
 [lib]

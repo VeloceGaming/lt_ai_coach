@@ -22,9 +22,7 @@ Normalized SQLite/JSON data
     |       manual actions and history
     |
     `--> Lineup optimizer
-            |
-            +--> local candidate display
-            `--> compact LLM evidence request
+            `--> local candidate display
 ```
 
 ## Runtime Split
@@ -38,20 +36,12 @@ Rust application backend
     |-- save provider and process execution
     |-- normalized SQLite database
     |-- statistics and lineup optimizer
-    |-- draft state and legality
-    `-- LLM provider clients and response cache
+    `-- draft state and legality
 ```
 
-The frontend never receives raw replay files, database access, API keys, or
+The frontend never receives raw replay files, direct database access, or
 arbitrary process execution. Commands return compact serializable view models.
 
 The UI and recommendation engine depend on the normalized schema, not directly
 on the probe's debug text files. This allows the save provider to be replaced
 without rewriting the rest of the application.
-
-LLM requests are explicit and cached by a hash of:
-
-- Save/statistics version.
-- Draft mode, set, side, picks, bans, and Fearless exclusions.
-- Active roster and scoring configuration.
-- Model and prompt version.

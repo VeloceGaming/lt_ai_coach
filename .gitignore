@@ -61,16 +61,9 @@ assets/grids/
 # only loaded it from an external path. Kept locally, excluded from the release.
 scripts/build-mod-portrait-catalog.py
 
-# Prototype images of unverified origin (exclude to be safe).
-design/prototypes/player-hub/*.png
-
 # Included by permission: base-game champion art (the devs allow mods to
 # redistribute assets from the unbundled base game — credit them in the README):
 #   assets/champions/                base champion sprite sheets
 #   assets/generated/base-portraits/ portraits cropped from those sheets
 # Also included: assets/fonts (SIL OFL), assets/Glyphs and assets/app-icon.svg
 # (your own artwork), and data/catalog (factual game data compiled into the app).
-
-# Outdated root README — excluded from the public repo (kept on local disk).
-# Anchored with a leading slash so component READMEs under src/ still publish.
-/README.md

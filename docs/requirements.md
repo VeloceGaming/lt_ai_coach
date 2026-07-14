@@ -7,7 +7,6 @@
 3. Select Normal, Fearless, or Fearless Hard and the user's side.
 4. Record bans and picks manually through the champion grid.
 5. Update local legality, role coverage, and candidate scores without API use.
-6. Call the LLM only through an explicit `Ask AI Coach` action.
 
 ## Save Data
 
@@ -46,22 +45,10 @@ The deterministic engine must:
 - Consider role performance, player proficiency, synergy, counters,
   flexibility, sample size, and confidence.
 
-The LLM receives aggregated evidence rather than raw replay files. It returns:
-
-- Recommended immediate pick or ban.
-- Intended role.
-- Expected lineup plan.
-- Alternatives.
-- Counter-pick and role-assignment risks.
-- Evidence and sample sizes supporting the recommendation.
-
-The LLM must not control legality or invent missing statistics.
-
 ## Initial Non-Goals
 
 - Reading the live B/P screen.
 - Clicking or controlling the game.
 - Native game hooks.
 - Changing installed mods or their configuration.
-- Calling an LLM after every manual draft action.
-
+- Calling external AI or LLM services.

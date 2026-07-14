@@ -1,7 +1,6 @@
 // A labelled row of draft slots (bans, picks, or prior picks) for one team.
 
 // NOTE: unused (superseded by FullDraftSide) — nothing imports this component.
-// Kept compiling rather than translated; see docs/ui-modernization-notes.md.
 import type { DraftAction, DraftChampion } from "../types";
 import { draftActionLabelKey } from "../lib/draft";
 import { ChampionPortraitView } from "./ChampionPortraitView";

@@ -358,6 +358,7 @@ pub fn build_shortlist_with_athletes(
     )
 }
 
+#[cfg(test)]
 pub fn build_shortlist(
     request: &RecommendationRequest,
     catalog: &DraftCatalog,
