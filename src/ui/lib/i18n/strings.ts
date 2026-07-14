@@ -150,6 +150,10 @@ export const en: Record<string, string> = {
 
   "championDetail.detailsAria": "details",
   "championDetail.closeAria": "Close champion details",
+  "championDetail.adjustedWinRate": "Adjusted win rate",
+  "championDetail.adjustedWinRateHint": "{games} games",
+  "championDetail.openStats": "View stats",
+  "championDetail.openStatsAria": "View {champion} in Stats",
   "championDetail.buffed": "buffed",
   "championDetail.nerfed": "nerfed",
   "championDetail.changedThisPatch": "Changed this patch",
@@ -188,6 +192,7 @@ export const en: Record<string, string> = {
   "stats.lowSample": "Low sample",
   "stats.noRawTags": "No rawTags",
   "stats.detailRoleSwitcherAria": "Champion role statistics",
+  "stats.suggestedRole": "Suggested role",
   "stats.roleGames": "{games} games",
   "stats.noRoleData": "Not enough data",
   "stats.manualTierTooltip": "Manual tier override",

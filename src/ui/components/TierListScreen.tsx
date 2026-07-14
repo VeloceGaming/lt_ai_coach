@@ -11,7 +11,7 @@ import { useT } from "../stores/useI18nStore";
 const roles = ["all", "top", "jungle", "mid", "bot", "support"] as const;
 type RoleFilter = (typeof roles)[number];
 
-export function TierListScreen({ statistics, tiers, focusChampionId, onSetTier }: { statistics: RoleStatistics; tiers: Record<string, string>; focusChampionId?: string | null; onSetTier: (championId: string, tier: string) => void }) {
+export function TierListScreen({ statistics, tiers, focusChampionId, onSetTier, onOpenStats }: { statistics: RoleStatistics; tiers: Record<string, string>; focusChampionId?: string | null; onSetTier: (championId: string, tier: string) => void; onOpenStats: (championId: string, role: string) => void }) {
   const t = useT();
   const [role, setRole] = useState<RoleFilter>("all");
   const [search, setSearch] = useState("");
@@ -62,6 +62,6 @@ export function TierListScreen({ statistics, tiers, focusChampionId, onSetTier }
       </div>
       <StaggerList className="tier-rows">{tierOrder.map((tier) => <StaggerItem key={tier}><TierRow tier={tier} rows={grouped.get(tier) ?? []} roleFor={roleFor} selectedId={selectedId} onSelect={(row) => setSelectedId(row.championId)} /></StaggerItem>)}</StaggerList>
     </main>
-    {selectedRow && <ChampionDetailPanel key={selectedRow.championId} row={selectedRow} role={roleFor(selectedRow)} tiers={tiers} tierContext={tierContext} onSetTier={onSetTier} onClose={() => setSelectedId(null)} />}
+    {selectedRow && <ChampionDetailPanel key={selectedRow.championId} row={selectedRow} role={roleFor(selectedRow)} tiers={tiers} tierContext={tierContext} onSetTier={onSetTier} onOpenStats={onOpenStats} onClose={() => setSelectedId(null)} />}
   </div>;
 }

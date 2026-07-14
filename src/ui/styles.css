@@ -2776,6 +2776,12 @@ body:not(.compact-mode) {
 .full-app-shell .icon-button { display: grid; min-width: 28px; height: 28px; place-items: center; border: 0; border-radius: var(--radius-sm); padding: 0; color: var(--color-text-tertiary); background: transparent; }
 .full-app-shell .icon-button:hover { color: var(--color-text-primary); background: var(--color-background-tertiary); }
 .detail-label { display: block; margin-bottom: 9px; color: var(--color-text-secondary); font-size: 10px; font-weight: var(--weight-semibold); letter-spacing: var(--tracking-label); text-transform: uppercase; }
+.champion-detail-performance { display: flex; align-items: end; justify-content: space-between; gap: 10px; border: 1px solid var(--color-border-tertiary); border-radius: var(--radius-sm); padding: 11px; background: var(--color-background-primary); }
+.champion-detail-performance .detail-label { margin-bottom: 4px; }
+.champion-detail-performance strong { display: block; color: var(--color-text-info); font-family: var(--font-mono); font-size: 22px; font-weight: var(--weight-semibold); line-height: 1; }
+.champion-detail-performance small { display: block; margin-top: 5px; color: var(--color-text-secondary); font-size: 10px; }
+.full-app-shell .detail-stats-link { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--color-border-info); border-radius: 7px; padding: 7px 9px; color: var(--color-text-info); background: var(--color-background-info); font-size: 10px; font-weight: var(--weight-semibold); white-space: nowrap; }
+.full-app-shell .detail-stats-link:hover { filter: brightness(1.08); }
 
 .chart-line { fill: none; stroke: var(--color-border-info); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 .chart-point { fill: var(--color-background-primary); stroke: var(--color-border-info); stroke-width: 2.5; cursor: pointer; }
@@ -3115,6 +3121,8 @@ body:not(.compact-mode) {
 .full-app-shell .stats-detail-role-switcher button.active { border-color: var(--color-border-info); color: var(--color-text-info); background: var(--color-background-info); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-border-info) 30%, transparent); }
 .full-app-shell .stats-detail-role-switcher button:disabled { opacity: 0.24; filter: grayscale(1); }
 .stats-detail-role-switcher .role-glyph { width: 15px; height: 15px; flex-basis: 15px; }
+.stats-suggested-role { display: flex; align-items: center; gap: 4px; margin-top: 7px; color: var(--color-text-secondary); font-size: 10px; }
+.stats-suggested-role .role-glyph { width: 12px; height: 12px; flex-basis: 12px; color: var(--color-text-info); }
 .stats-detail-header select { min-width: 78px; }
 .stats-detail-close { display: grid; width: 30px; height: 30px; min-width: 30px; place-items: center; border: 1px solid var(--color-border-tertiary); border-radius: var(--radius-sm); padding: 0; color: var(--color-text-secondary); background: var(--color-background-secondary); }
 .stats-selected-portrait-flight { position: absolute; z-index: 34; top: 0; left: 0; pointer-events: none; transform: translate(var(--portrait-from-x), var(--portrait-from-y)); animation: stats-portrait-flight 260ms var(--ease-standard) forwards; }

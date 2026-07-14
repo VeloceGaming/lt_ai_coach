@@ -28,7 +28,7 @@ type ChampionAtlasEntry = { champion: DraftChampion; row: ChampionRoleStat | nul
 type PortraitFlight = { championId: string; fromX: number; fromY: number; portrait: DraftChampion["portrait"] };
 type DetailRoleOption = { role: DetailRole; row: ChampionRoleStat | null; enabled: boolean };
 
-export function StatisticsPanel({ statistics, draftCatalog, tiers, onSetTier, onSetChampionOverride }: { statistics: RoleStatistics; draftCatalog: DraftCatalog; tiers: Record<string, string>; onSetTier: (championId: string, tier: string) => void; onSetChampionOverride: (championId: string, name: string, portraitPath: string, nameChanged: boolean, portraitPathChanged: boolean) => Promise<void> }) {
+export function StatisticsPanel({ statistics, draftCatalog, tiers, focusChampion, onFocusChampionHandled, onSetTier, onSetChampionOverride }: { statistics: RoleStatistics; draftCatalog: DraftCatalog; tiers: Record<string, string>; focusChampion?: { championId: string; role: string } | null; onFocusChampionHandled?: () => void; onSetTier: (championId: string, tier: string) => void; onSetChampionOverride: (championId: string, name: string, portraitPath: string, nameChanged: boolean, portraitPathChanged: boolean) => Promise<void> }) {
   const t = useT();
   const [role, setRole] = useState<RoleFilter>("all");
   const [query, setQuery] = useState("");
@@ -88,7 +88,9 @@ export function StatisticsPanel({ statistics, draftCatalog, tiers, onSetTier, on
     });
   }, [selectedEntry, statistics.roleRows]);
   const selectedRole = detailRole ?? "all";
-  const detailRow = selectedRoleOptions.find((option) => option.role === detailRole && option.enabled)?.row ?? null;
+  const detailRow = selectedRole === "all"
+    ? selectedEntry?.row ?? null
+    : selectedRoleOptions.find((option) => option.role === detailRole)?.row ?? null;
   const selectedTags = selectedEntry ? championTags(selectedEntry.champion.id, liveTags) : [];
 
   const roleAverage = useMemo(() => {
@@ -108,6 +110,12 @@ export function StatisticsPanel({ statistics, draftCatalog, tiers, onSetTier, on
     document.addEventListener("pointerdown", onPointerDown, true);
     return () => document.removeEventListener("pointerdown", onPointerDown, true);
   }, [selectedId]);
+
+  useEffect(() => {
+    if (!focusChampion) return;
+    focusChampionDetail(focusChampion.championId, focusChampion.role);
+    onFocusChampionHandled?.();
+  }, [focusChampion]);
 
   if (atlasEntries.length === 0) {
     return <section className="statistics-panel stats-intel"><div className="screen-empty"><strong>{t("stats.noStatsYet")}</strong></div></section>;
@@ -129,6 +137,21 @@ export function StatisticsPanel({ statistics, draftCatalog, tiers, onSetTier, on
       .filter((row): row is ChampionRoleStat => Boolean(row && row.games >= MIN_ROLE_SAMPLE_GAMES))
       .sort((left, right) => right.games - left.games)[0]?.role as DetailRole | undefined;
     setDetailRole(defaultRole ?? null);
+    setSelectedId(entry.champion.id);
+  }
+
+  function focusChampionDetail(championId: string, role: string) {
+    const entry = atlasEntries.find((candidate) => candidate.champion.id === championId);
+    if (!entry) return;
+    const defaultRole = detailRoles.includes(role as DetailRole)
+      ? role as DetailRole
+      : detailRoles
+      .map((candidateRole) => statistics.roleRows.find((row) => row.championId === entry.champion.id && row.role === candidateRole) ?? null)
+      .filter((row): row is ChampionRoleStat => Boolean(row && row.games >= MIN_ROLE_SAMPLE_GAMES))
+      .sort((left, right) => right.games - left.games)[0]?.role as DetailRole | undefined;
+    setPortraitFlight(null);
+    setFlightLanded(false);
+    setDetailRole(role === "all" ? null : defaultRole ?? null);
     setSelectedId(entry.champion.id);
   }
 
@@ -181,13 +204,16 @@ export function StatisticsPanel({ statistics, draftCatalog, tiers, onSetTier, on
   </section>;
 }
 
-function ChampionIntelDetail({ detailRef, champion, row, role, roleOptions, onRoleChange, tags, patch, tiers, onSetTier, onSetChampionOverride, roleAverage, onClose }: { detailRef: RefObject<HTMLElement | null>; champion: DraftChampion; row: ChampionRoleStat | null; role: string; roleOptions: DetailRoleOption[]; onRoleChange: (role: DetailRole) => void; tags: string[]; patch: string; tiers: Record<string, string>; onSetTier: (championId: string, tier: string) => void; onSetChampionOverride: (championId: string, name: string, portraitPath: string, nameChanged: boolean, portraitPathChanged: boolean) => Promise<void>; roleAverage: StatAverages; onClose: () => void }) {
+function ChampionIntelDetail({ detailRef, champion, row, role, roleOptions, onRoleChange, tags, patch, tiers, onSetTier, onSetChampionOverride, roleAverage, onClose }: { detailRef: RefObject<HTMLElement | null>; champion: DraftChampion; row: ChampionRoleStat | null; role: string; roleOptions: DetailRoleOption[]; onRoleChange: (role: DetailRole | null) => void; tags: string[]; patch: string; tiers: Record<string, string>; onSetTier: (championId: string, tier: string) => void; onSetChampionOverride: (championId: string, name: string, portraitPath: string, nameChanged: boolean, portraitPathChanged: boolean) => Promise<void>; roleAverage: StatAverages; onClose: () => void }) {
   const t = useT();
   const [metric, setMetric] = useState<MetricKey>("winRate");
   const [editOpen, setEditOpen] = useState(false);
   const portrait = champion.portrait ?? row?.portrait ?? null;
   const championName = champion.name || row?.championName || champion.id;
   const damagePerGold = row ? ratioOrNull(row.avgDamage, row.avgGold) : null;
+  const suggestedRole = [...roleOptions]
+    .filter((option) => option.enabled && option.row)
+    .sort((left, right) => right.row!.games - left.row!.games)[0];
 
   return <aside ref={detailRef} className="stats-detail" aria-label={`${championName} ${t("stats.champIntelAria")}`}>
     <div className="stats-detail-header">
@@ -203,9 +229,10 @@ function ChampionIntelDetail({ detailRef, champion, row, role, roleOptions, onRo
         <div className="stats-detail-role-switcher" aria-label={t("stats.detailRoleSwitcherAria")}>
           {roleOptions.map((option) => {
             const sampleLabel = option.row ? t("stats.roleGames", { games: option.row.games }) : t("stats.noRoleData");
-            return <button type="button" key={option.role} className={role === option.role ? "active" : ""} disabled={!option.enabled} aria-pressed={role === option.role} title={`${t(`role.${option.role}`)} · ${sampleLabel}`} onClick={() => onRoleChange(option.role)}><RoleGlyph role={option.role} label={t(`role.${option.role}`)} /></button>;
+            return <button type="button" key={option.role} className={role === option.role ? "active" : ""} disabled={!option.enabled} aria-pressed={role === option.role} title={`${t(`role.${option.role}`)} · ${sampleLabel}`} onClick={() => onRoleChange(role === option.role ? null : option.role)}><RoleGlyph role={option.role} label={t(`role.${option.role}`)} /></button>;
           })}
         </div>
+        {suggestedRole && <div className="stats-suggested-role"><span>{t("stats.suggestedRole")}:</span><RoleGlyph role={suggestedRole.role} /><span>{t(`role.${suggestedRole.role}`)}</span></div>}
       </div>
       <select value={tiers[champion.id] ?? ""} onChange={(event) => onSetTier(champion.id, event.target.value)} title={t("stats.manualTierTooltip")} disabled={!row}>
         {["", "S", "A", "C", "D", "F"].map((tier) => <option key={tier} value={tier}>{tier || t("stats.autoOption")}</option>)}

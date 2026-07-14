@@ -75,6 +75,7 @@ export function App() {
   const lastBridgeContextRevision = useRef(-1);
   // Champion to focus when jumping between the Tier list and Patch notes screens.
   const [focusChampion, setFocusChampion] = useState<string | null>(null);
+  const [statsFocusChampion, setStatsFocusChampion] = useState<{ championId: string; role: string } | null>(null);
   // Champion names, translated once here, for every screen downstream (they
   // all receive draftCatalog/statistics as props from this component). See
   // useChampionName's doc comment for why this doesn't touch en/t().
@@ -86,6 +87,7 @@ export function App() {
   } : rawStatistics;
   const championLookup = new Map((draftCatalog?.champions ?? []).map((champion) => [champion.id, { name: champion.name, portrait: champion.portrait }]));
   const openChampionInTiers = (championId: string) => { setFocusChampion(championId); setScreen("tiers"); };
+  const openChampionInStats = (championId: string, role: string) => { setStatsFocusChampion({ championId, role }); setScreen("stats"); };
 
   useEffect(() => { initialize(); }, [initialize]);
 
@@ -197,9 +199,9 @@ export function App() {
       ? <PlayerHubScreen athletes={athletes} playerTeamId={summary?.playerTeamId ?? null} catalog={draftCatalog} loadDetail={loadAthleteDetail} lookupMastery={lookupAthleteMastery} />
       : <section className="screen-panel screen-empty"><strong>{t("app.players.emptyTitle")}</strong><p>{t("app.players.emptyDesc")}</p></section>)}
 
-    {screen === "tiers" && (statistics ? <TierListScreen statistics={statistics} tiers={tiers} focusChampionId={focusChampion} onSetTier={setChampionTier} /> : <section className="screen-panel screen-empty"><strong>{t("app.tiers.emptyTitle")}</strong><p>{t("app.tiers.emptyDesc")}</p><button type="button" className="primary-button" disabled={busy || coachState !== "paused" || !status?.databaseReady} onClick={prepareCoach}>{t("app.prepareCoach")}</button></section>)}
+    {screen === "tiers" && (statistics ? <TierListScreen statistics={statistics} tiers={tiers} focusChampionId={focusChampion} onSetTier={setChampionTier} onOpenStats={openChampionInStats} /> : <section className="screen-panel screen-empty"><strong>{t("app.tiers.emptyTitle")}</strong><p>{t("app.tiers.emptyDesc")}</p><button type="button" className="primary-button" disabled={busy || coachState !== "paused" || !status?.databaseReady} onClick={prepareCoach}>{t("app.prepareCoach")}</button></section>)}
 
-    {screen === "stats" && (statistics && draftCatalog ? <section className="screen-panel stats-screen"><StatisticsPanel statistics={statistics} draftCatalog={draftCatalog} tiers={tiers} onSetTier={setChampionTier} onSetChampionOverride={setChampionOverride} /></section> : <section className="screen-panel screen-empty"><strong>{t("app.stats.emptyTitle")}</strong><p>{t("app.stats.emptyDesc")}</p><button type="button" className="primary-button" disabled={busy || coachState !== "paused" || !status?.databaseReady} onClick={prepareCoach}>{t("app.prepareCoach")}</button></section>)}
+    {screen === "stats" && (statistics && draftCatalog ? <section className="screen-panel stats-screen"><StatisticsPanel statistics={statistics} draftCatalog={draftCatalog} tiers={tiers} focusChampion={statsFocusChampion} onFocusChampionHandled={() => setStatsFocusChampion(null)} onSetTier={setChampionTier} onSetChampionOverride={setChampionOverride} /></section> : <section className="screen-panel screen-empty"><strong>{t("app.stats.emptyTitle")}</strong><p>{t("app.stats.emptyDesc")}</p><button type="button" className="primary-button" disabled={busy || coachState !== "paused" || !status?.databaseReady} onClick={prepareCoach}>{t("app.prepareCoach")}</button></section>)}
 
     {screen === "draft" && (draftCatalog ? <DraftBoard catalog={draftCatalog} recommendationsEnabled={coachState === "ready"} tiers={tiers} currentPatch={statistics?.currentPatch} athletes={athletes} /> : <section className="screen-panel screen-empty"><strong>{t("app.draft.emptyTitle")}</strong><p>{t("app.draft.emptyDesc")}</p></section>)}
 
