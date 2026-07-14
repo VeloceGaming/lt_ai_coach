@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LT AI Coach — Compact overlay (locked mockup)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.24.0/dist/tabler-icons.min.css">
+<style>
+:root{
+--color-background-primary:#ffffff;--color-background-secondary:#f5f4ef;--color-background-tertiary:#ecebe4;
+--color-background-info:#e6f1fb;--color-background-danger:#fcebeb;--color-background-success:#e6f4ea;--color-background-warning:#faeeda;
+--color-text-primary:#1a1a18;--color-text-secondary:#5f5e5a;--color-text-tertiary:#8a8980;
+--color-text-info:#185fa5;--color-text-danger:#a32d2d;--color-text-success:#0f6e56;--color-text-warning:#854f0b;
+--color-border-tertiary:rgba(0,0,0,.12);--color-border-secondary:rgba(0,0,0,.22);--color-border-primary:rgba(0,0,0,.32);
+--color-border-info:#378add;--color-border-danger:#e24b4a;--color-border-success:#1d9e75;--color-border-warning:#ba7517;
+--font-sans:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;--font-mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;--font-serif:Georgia,serif;
+--border-radius-md:8px;--border-radius-lg:12px;--border-radius-xl:16px;
+}
+@media (prefers-color-scheme:dark){:root{
+--color-background-primary:#2b2b2e;--color-background-secondary:#323235;--color-background-tertiary:#3a3a3d;
+--color-background-info:#26384a;--color-background-danger:#3a2727;--color-background-success:#27372c;--color-background-warning:#3a3320;
+--color-text-primary:#ececec;--color-text-secondary:#a2a2a4;--color-text-tertiary:#6f6f72;
+--color-text-info:#6aa8e0;--color-text-danger:#e08a82;--color-text-success:#6ec08c;--color-text-warning:#d8b06a;
+--color-border-tertiary:rgba(255,255,255,.10);--color-border-secondary:rgba(255,255,255,.18);--color-border-primary:rgba(255,255,255,.28);
+}}
+body{margin:0;padding:28px;background:#e9e8e2;display:flex;justify-content:center;align-items:flex-start;font-family:var(--font-sans)}
+@media (prefers-color-scheme:dark){body{background:#1a1a1c}}
+.frame{width:100%;max-width:1000px}
+.note{max-width:1000px;margin:0 auto 14px;font:13px/1.5 var(--font-sans);color:#666}
+@media (prefers-color-scheme:dark){.note{color:#999}}
+</style>
+</head>
+<body>
+<div class="frame">
+<p class="note">LT AI Coach — compact overlay (live draft). LOCKED Stage B mockup. Three equal thirds: board · detail · picks. Board portraits 42px wide. Click a pick card to update the middle detail.</p>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="r-bot" viewBox="0 0 271 266"><path opacity=".16" d="M99.7239 97.3495H170.955V168.581H99.7239V97.3495Z"/><path opacity=".16" d="M186.362 49.8619H52.2363V183.988L0 236.224V0H236.224L186.362 49.8619Z"/><path d="M30.7359 265.93H270.679V25.9871L218.443 78.2234V216.068H80.5978L30.7359 265.93Z"/></symbol>
+<symbol id="r-mid" viewBox="0 0 271 266"><path opacity=".16" d="M0 0H201.227L151.365 49.8619H52.2363V148.991L0 201.227V0Z"/><path opacity=".16" d="M69.5978 265.93H270.679V64.8484L218.443 117.085V216.068H119.46L69.5978 265.93Z"/><path d="M270.679 43.29L48.0381 265.931H0V222.785L222.785 0H270.679V43.29Z"/></symbol>
+</defs></svg>
+<div style="font-family:var(--font-sans);background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);overflow:hidden">
+
+  <div style="display:flex;align-items:center;gap:9px;padding:9px 14px;border-bottom:0.5px solid var(--color-border-tertiary)">
+    <span style="width:9px;height:9px;border-radius:50%;background:#378ADD"></span>
+    <span style="font-size:14px;font-weight:500">Blue · pick 3</span>
+    <span style="text-transform:uppercase;letter-spacing:.9px;font-size:10px;line-height:1.15;color:var(--color-text-info);background:var(--color-background-info);padding:3px 9px;border-radius:var(--border-radius-md);max-width:46px">Your turn</span>
+    <span title="Switch which side is yours" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary);padding:4px 10px;border-radius:var(--border-radius-md);cursor:pointer"><i class="ti ti-switch-horizontal" style="font-size:14px"></i>Side: Blue</span>
+    <span style="font-family:var(--font-mono);font-size:12px;color:var(--color-text-tertiary)">Fearless · G3</span>
+    <span style="font-family:var(--font-mono);font-size:14px;color:var(--color-text-secondary);margin-left:auto">0:27</span>
+    <span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--color-text-secondary);border:0.5px solid var(--color-border-tertiary);padding:4px 10px;border-radius:var(--border-radius-md)"><i class="ti ti-refresh" style="font-size:14px"></i>New series</span>
+    <i class="ti ti-arrows-diagonal" style="font-size:16px;color:var(--color-text-tertiary)" aria-hidden="true"></i>
+    <i class="ti ti-pin" style="font-size:16px;color:var(--color-text-info)" aria-hidden="true"></i>
+  </div>
+
+  <div style="display:flex;align-items:stretch;padding:16px 16px;gap:16px;min-height:200px">
+
+    <div style="flex:1 1 0;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:14px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="width:32px;flex-shrink:0;font-size:12px;font-weight:500;color:#378ADD">BLUE</span>
+        <div style="display:flex;gap:6px">
+          <div style="text-align:center"><div style="width:42px;height:64px;border-radius:6px;background:#B5D4F4;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:#1f2430">Th</div><div style="font-size:9px;color:var(--color-text-secondary);margin-top:3px;width:42px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Thorne</div></div>
+          <div style="text-align:center"><div style="width:42px;height:64px;border-radius:6px;background:#9FE1CB;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:#1f2430">Bo</div><div style="font-size:9px;color:var(--color-text-secondary);margin-top:3px;width:42px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Bouldra</div></div>
+          <div style="text-align:center"><div style="width:42px;height:64px;border-radius:6px;border:2px solid var(--color-border-info);display:flex;align-items:center;justify-content:center;color:var(--color-text-info);font-size:14px"><i class="ti ti-dots"></i></div><div style="font-size:9px;color:var(--color-text-info);margin-top:3px">now</div></div>
+          <div style="text-align:center"><div style="width:42px;height:64px;border-radius:6px;border:0.5px dashed var(--color-border-tertiary)"></div><div style="font-size:9px;margin-top:3px">&nbsp;</div></div>
+          <div style="text-align:center"><div style="width:42px;height:64px;border-radius:6px;border:0.5px dashed var(--color-border-tertiary)"></div><div style="font-size:9px;margin-top:3px">&nbsp;</div></div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="width:32px;flex-shrink:0;font-size:12px;font-weight:500;color:#E24B4A">RED</span>
+        <div style="display:flex;gap:6px">
+          <div style="text-align:center"><div style="width:42px;height:64px;border-radius:6px;background:#FAC775;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:#1f2430">Os</div><div style="font-size:9px;color:var(--color-text-secondary);margin-top:3px;width:42px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Osmar</div></div>
+          <div style="text-align:center"><div style="width:42px;height:64px;border-radius:6px;background:#9FE1CB;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:#1f2430">Ve</div><div style="font-size:9px;color:var(--color-text-secondary);margin-top:3px;width:42px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Velko</div></div>
+          <div style="text-align:center"><div style="width:42px;height:64px;border-radius:6px;border:0.5px dashed var(--color-border-tertiary)"></div><div style="font-size:9px;margin-top:3px">&nbsp;</div></div>
+          <div style="text-align:center"><div style="width:42px;height:64px;border-radius:6px;border:0.5px dashed var(--color-border-tertiary)"></div><div style="font-size:9px;margin-top:3px">&nbsp;</div></div>
+          <div style="text-align:center"><div style="width:42px;height:64px;border-radius:6px;border:0.5px dashed var(--color-border-tertiary)"></div><div style="font-size:9px;margin-top:3px">&nbsp;</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1 1 0;min-width:0;display:flex;align-items:center">
+      <div style="width:100%;display:flex;flex-direction:column;gap:9px;padding:0 4px">
+        <div style="display:flex;align-items:center;gap:6px"><span id="d-name" style="font-size:15px;font-weight:500">Mira</span><span style="width:16px;height:16px;border-radius:4px;background:var(--color-background-secondary);display:inline-flex;align-items:center;justify-content:center;padding:2px;color:var(--color-text-secondary)"><svg style="fill:currentColor;display:block" width="12" height="12"><use id="d-role" href="#r-mid"/></svg></span><span style="font-family:var(--font-mono);font-size:16px;font-weight:500;color:var(--color-text-secondary);margin-left:auto" id="d-score">86</span></div>
+        <div><span id="d-patch" style="font-family:var(--font-mono);font-size:11px;color:#E24B4A;background:var(--color-background-danger);padding:1px 7px;border-radius:5px">&#9660;0.8 patch</span></div>
+        <div id="d-reasons" style="display:flex;flex-direction:column;gap:7px"></div>
+      </div>
+    </div>
+
+    <div id="ovcards" style="flex:1 1 0;min-width:0;display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+      <div class="ovc" data-name="Drask" data-role="r-bot" data-score="92" data-patch="&#9650;2.4 patch" data-pp="1" data-reasons='[{"t":"Fills your open bot carry","ok":1},{"t":"Pairs with Bouldra pressure","ok":1},{"t":"Safe blind pick","ok":1},{"t":"2-item power spike","ok":1}]' style="position:relative;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden;background:var(--color-background-secondary);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;min-height:170px;cursor:pointer">
+        <span style="position:absolute;top:6px;left:6px;font-family:var(--font-mono);font-size:11px;font-weight:500;color:#fff;background:rgba(12,68,124,.92);width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center">1</span>
+        <span style="position:absolute;top:7px;right:7px;color:var(--color-text-tertiary);font-size:13px"><i class="ti ti-rotate-2"></i></span>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-top:10px"><div style="width:24px;height:24px;border-radius:50%;background:#85B7EB"></div><div style="width:34px;height:62px;border-radius:8px 8px 6px 6px;background:#85B7EB;margin-top:-2px"></div></div>
+        <div style="width:100%;background:rgba(20,24,32,.55);color:#fff;font-size:13px;font-weight:500;padding:5px 7px;text-align:center">Drask</div>
+      </div>
+      <div class="ovc sel" data-name="Mira" data-role="r-mid" data-score="86" data-patch="&#9660;0.8 patch" data-pp="0" data-reasons='[{"t":"Beats Velko","ok":1},{"t":"Mid overlap","ok":0}]' style="position:relative;border:2px solid var(--color-border-info);border-radius:var(--border-radius-md);overflow:hidden;background:var(--color-background-secondary);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;min-height:170px;cursor:pointer">
+        <span style="position:absolute;top:7px;right:7px;color:var(--color-text-tertiary);font-size:13px"><i class="ti ti-rotate-2"></i></span>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-top:10px"><div style="width:24px;height:24px;border-radius:50%;background:#A99CEF"></div><div style="width:34px;height:62px;border-radius:8px 8px 6px 6px;background:#A99CEF;margin-top:-2px"></div></div>
+        <div style="width:100%;background:rgba(20,24,32,.55);color:#fff;font-size:13px;font-weight:500;padding:5px 7px;text-align:center">Mira</div>
+      </div>
+      <div class="ovc" data-name="Tessik" data-role="r-bot" data-score="78" data-patch="&#9650;1.9 patch" data-pp="1" data-reasons='[{"t":"Highest scaling ceiling","ok":1},{"t":"Buffed Q this patch","ok":1},{"t":"Contested — likely banned","ok":0}]' style="position:relative;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden;background:var(--color-background-secondary);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;min-height:170px;cursor:pointer">
+        <span style="position:absolute;top:7px;right:7px;color:var(--color-text-tertiary);font-size:13px"><i class="ti ti-rotate-2"></i></span>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-top:10px"><div style="width:24px;height:24px;border-radius:50%;background:#85B7EB"></div><div style="width:34px;height:62px;border-radius:8px 8px 6px 6px;background:#85B7EB;margin-top:-2px"></div></div>
+        <div style="width:100%;background:rgba(20,24,32,.55);color:#fff;font-size:13px;font-weight:500;padding:5px 7px;text-align:center">Tessik</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<script>
+(function(){
+  var cards=document.querySelectorAll('#ovcards .ovc');
+  var nm=document.getElementById('d-name'),role=document.getElementById('d-role'),patch=document.getElementById('d-patch'),score=document.getElementById('d-score'),rs=document.getElementById('d-reasons');
+  function render(c){
+    nm.textContent=c.dataset.name;
+    role.setAttribute('href','#'+c.dataset.role);
+    patch.innerHTML=c.dataset.patch;
+    var pos=c.dataset.pp==='1';
+    patch.style.color=pos?'#1D9E75':'#E24B4A';
+    patch.style.background=pos?'var(--color-background-success)':'var(--color-background-danger)';
+    score.textContent=c.dataset.score;
+    rs.innerHTML='';
+    JSON.parse(c.dataset.reasons).forEach(function(r){
+      var row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:flex-start;gap:6px;font-size:12px;color:var(--color-text-secondary);line-height:1.3';
+      var ic=document.createElement('i');
+      ic.className=r.ok?'ti ti-check':'ti ti-alert-triangle';
+      ic.style.cssText='font-size:13px;margin-top:1px;flex-shrink:0;color:'+(r.ok?'#1D9E75':'#BA7517');
+      var sp=document.createElement('span');sp.textContent=r.t;
+      row.appendChild(ic);row.appendChild(sp);rs.appendChild(row);
+    });
+  }
+  cards.forEach(function(c){
+    c.addEventListener('click',function(){
+      cards.forEach(function(x){x.classList.remove('sel');x.style.border='0.5px solid var(--color-border-tertiary)';});
+      c.classList.add('sel');c.style.border='2px solid var(--color-border-info)';
+      render(c);
+    });
+  });
+  render(document.querySelector('#ovcards .ovc.sel'));
+})();
+</script>
+</body>
+</html>

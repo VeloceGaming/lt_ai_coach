@@ -1,0 +1,34 @@
+{
+  "save": {
+    "path": "",
+    "autoLocate": true,
+    "watchForChanges": true,
+    "provider": "existing-probe"
+  },
+  "draft": {
+    "mode": "normal",
+    "side": "blue"
+  },
+  "statistics": {
+    "minimumGames": 5,
+    "reliableGames": 40,
+    "priorGames": 20,
+    "weights": {
+      "rolePerformance": 0.4,
+      "playerProficiency": 0.2,
+      "synergy": 0.15,
+      "matchup": 0.15,
+      "flexibility": 0.1
+    }
+  },
+  "llm": {
+    "enabled": true,
+    "provider": "openrouter",
+    "model": "",
+    "apiKeyPersistence": "windows-credential-manager",
+    "maximumPickCandidates": 12,
+    "maximumBanCandidates": 8,
+    "cacheResponses": false,
+    "requestMode": "manual"
+  }
+}

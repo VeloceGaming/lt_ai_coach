@@ -1,0 +1,158 @@
+/* Stage C neutral theme. Components consume semantic names so a future theme
+ * can replace the palette without rewriting screen CSS. */
+:root {
+  color-scheme: light dark;
+  /* Surface ramp — the app's "paper" (Settings → Surface preset drives these). */
+  --color-background-canvas: #e9e8e2;
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #f5f4ef;
+  --color-background-tertiary: #ecebe4;
+  --color-text-primary: #1a1a18;
+  --color-text-secondary: #5f5e5a;
+  --color-text-tertiary: #8a8980;
+  --color-border-tertiary: rgba(0, 0, 0, 0.12);
+  --color-border-secondary: rgba(0, 0, 0, 0.22);
+  --color-border-primary: rgba(0, 0, 0, 0.32);
+  /* Accent — the customizable highlight/brand family (Settings → Accent). The
+     semantic "info" tokens alias accent so every highlight follows one knob. */
+  --color-accent: #378add;
+  --color-accent-text: #185fa5;
+  --color-accent-surface: #e6f1fb;
+  --color-accent-border: #378add;
+  --color-text-info: var(--color-accent-text);
+  --color-background-info: var(--color-accent-surface);
+  --color-border-info: var(--color-accent-border);
+  /* Status — fixed; these colors carry meaning (buff / nerf / warning). */
+  --color-background-danger: #fcebeb;
+  --color-background-success: #e6f4ea;
+  --color-background-warning: #faeeda;
+  --color-text-danger: #a32d2d;
+  --color-text-success: #0f6e56;
+  --color-text-warning: #854f0b;
+  --color-border-danger: #e24b4a;
+  --color-border-success: #1d9e75;
+  --color-border-warning: #ba7517;
+  --color-success: #1d9e75;
+  --color-danger: #e24b4a;
+  --color-warning: #ba7517;
+  /* Team identity — fixed, independent of accent and status. */
+  --color-blue: #378add;
+  --color-blue-bright: #185fa5;
+  --color-blue-text: #185fa5;
+  --color-blue-surface: #e6f1fb;
+  --color-blue-border: #378add;
+  --color-red: #e24b4a;
+  --color-red-bright: #a32d2d;
+  --color-red-text: #a32d2d;
+  --color-red-surface: #fcebeb;
+  --color-red-border: #e24b4a;
+  --font-sans: "JetBrains Mono", ui-monospace, monospace;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-serif: "JetBrains Mono", ui-monospace, monospace;
+  --text-eyebrow: 0.625rem;
+  --text-sm: 0.75rem;
+  --text-base: 0.875rem;
+  --text-lg: 1.125rem;
+  --text-heading: 1.125rem;
+  --weight-normal: 400;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-heavy: 700;
+  --tracking-label: 0.09em;
+  --space-2xs: 4px;
+  --space-xs: 6px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-2xl: 32px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 999px;
+  --motion-fast: 120ms;
+  --motion-base: 200ms;
+  --motion-slow: 320ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+}
+
+:root[data-typography="clean"] {
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "Inter", system-ui, sans-serif;
+  --font-serif: "Inter", system-ui, sans-serif;
+}
+
+:root[data-typography="geometric"] {
+  --font-sans: "Space Grotesk", system-ui, sans-serif;
+  --font-mono: "Space Grotesk", system-ui, sans-serif;
+  --font-serif: "Space Grotesk", system-ui, sans-serif;
+}
+
+/* These locales use one native Windows UI family across the whole interface.
+   Their typography controls are disabled in Settings while the locale is
+   active, so mixed-script fallback never produces a patchwork appearance. */
+:root:lang(ja) {
+  --font-sans: "Yu Gothic UI", "Meiryo UI", sans-serif;
+  --font-mono: "Yu Gothic UI", "Meiryo UI", sans-serif;
+  --font-serif: "Yu Gothic UI", "Meiryo UI", sans-serif;
+}
+
+:root:lang(ko) {
+  --font-sans: "Malgun Gothic", sans-serif;
+  --font-mono: "Malgun Gothic", sans-serif;
+  --font-serif: "Malgun Gothic", sans-serif;
+}
+
+:root:lang(zh-hans) {
+  --font-sans: "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+  --font-mono: "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+  --font-serif: "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+}
+
+:root:lang(zh-hant) {
+  --font-sans: "Microsoft JhengHei UI", "Microsoft JhengHei", PMingLiU, sans-serif;
+  --font-mono: "Microsoft JhengHei UI", "Microsoft JhengHei", PMingLiU, sans-serif;
+  --font-serif: "Microsoft JhengHei UI", "Microsoft JhengHei", PMingLiU, sans-serif;
+}
+
+:root:lang(th) {
+  --font-sans: "Leelawadee UI", Tahoma, sans-serif;
+  --font-mono: "Leelawadee UI", Tahoma, sans-serif;
+  --font-serif: "Leelawadee UI", Tahoma, sans-serif;
+}
+
+/* Dark palette — applied via the data-theme attribute (set by the theming engine
+ * at startup; "auto" resolves to light/dark from the OS). */
+:root[data-theme="dark"] {
+    --color-background-canvas: #1a1a1c;
+    --color-background-primary: #2b2b2b;
+    --color-background-secondary: #323235;
+    --color-background-tertiary: #3a3a3d;
+    --color-text-primary: #f4f4f5;
+    --color-text-secondary: #c3c3c8;
+    --color-text-tertiary: #96969d;
+    --color-border-tertiary: rgba(255, 255, 255, 0.14);
+    --color-border-secondary: rgba(255, 255, 255, 0.22);
+    --color-border-primary: rgba(255, 255, 255, 0.28);
+    /* Accent (info aliases follow these automatically). */
+    --color-accent: #6aa8e0;
+    --color-accent-text: #7db7ed;
+    --color-accent-surface: #26384a;
+    --color-accent-border: #378add;
+    /* Status — fixed. */
+    --color-background-danger: #3a2727;
+    --color-background-success: #27372c;
+    --color-background-warning: #3a3320;
+    --color-text-danger: #e08a82;
+    --color-text-success: #6ec08c;
+    --color-text-warning: #d8b06a;
+    /* Team identity — fixed (matches the previous blue / red look). */
+    --color-blue-text: #7db7ed;
+    --color-blue-surface: #26384a;
+    --color-blue-border: #378add;
+    --color-red-text: #e08a82;
+    --color-red-surface: #3a2727;
+    --color-red-border: #e24b4a;
+}

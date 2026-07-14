@@ -1,0 +1,1667 @@
+{
+  "schemaVersion": 1,
+  "generatedFrom": "Teamfight Manager 2 bundle.game_data",
+  "selectionRule": "idle.frames[0], otherwise first non-empty animation frame",
+  "portraits": {
+    "alchemist": {
+      "sheet": "assets/generated/base-portraits/alchemist.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/alchemist#sheet.png",
+      "sheetWidth": 1034,
+      "sheetHeight": 54,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 24.0,
+        "y": 0.0,
+        "width": 23.0,
+        "height": 53.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -34
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "android": {
+      "sheet": "assets/generated/base-portraits/android.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/android#sheet.png",
+      "sheetWidth": 2022,
+      "sheetHeight": 97,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 24.0,
+        "y": 0.0,
+        "width": 23.0,
+        "height": 47.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -30
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "archer": {
+      "sheet": "assets/generated/base-portraits/archer.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/archer#sheet.png",
+      "sheetWidth": 2970,
+      "sheetHeight": 88,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 66.0,
+        "y": 0.0,
+        "width": 33.0,
+        "height": 45.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -26
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -10
+      },
+      "missing": []
+    },
+    "bard": {
+      "sheet": "assets/generated/base-portraits/bard.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/bard#sheet.png",
+      "sheetWidth": 1484,
+      "sheetHeight": 54,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 32.0,
+        "y": 0.0,
+        "width": 31.0,
+        "height": 49.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -34
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "barrier_magician": {
+      "sheet": "assets/generated/base-portraits/barrier_magician.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/barrier_magician#sheet.png",
+      "sheetWidth": 1830,
+      "sheetHeight": 86,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 32.0,
+        "y": 0.0,
+        "width": 31.0,
+        "height": 47.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -32
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "berserker": {
+      "sheet": "assets/generated/base-portraits/berserker.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/berserker#sheet.png",
+      "sheetWidth": 4096,
+      "sheetHeight": 259,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 44.0,
+        "y": 0.0,
+        "width": 43.0,
+        "height": 57.0
+      },
+      "faceOffset": {
+        "x": 3,
+        "y": -38
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "bomber": {
+      "sheet": "assets/generated/base-portraits/bomber.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/bomber#sheet.png",
+      "sheetWidth": 4096,
+      "sheetHeight": 371,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 22.0,
+        "y": 0.0,
+        "width": 21.0,
+        "height": 51.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -34
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "boomerang_hunter": {
+      "sheet": "assets/generated/base-portraits/boomerang_hunter.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/boomerang_hunter#sheet.png",
+      "sheetWidth": 2338,
+      "sheetHeight": 92,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 86.0,
+        "y": 0.0,
+        "width": 35.0,
+        "height": 49.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -34
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "cavalry_knight": {
+      "sheet": "assets/generated/base-portraits/cavalry_knight.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/cavalry_knight#sheet.png",
+      "sheetWidth": 4096,
+      "sheetHeight": 189,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 46.0,
+        "y": 0.0,
+        "width": 45.0,
+        "height": 61.0
+      },
+      "faceOffset": {
+        "x": 1,
+        "y": -44
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "chef": {
+      "sheet": "assets/generated/base-portraits/chef.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/chef#sheet.png",
+      "sheetWidth": 1628,
+      "sheetHeight": 56,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 20.0,
+        "y": 0.0,
+        "width": 19.0,
+        "height": 49.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -34
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "circus_blade": {
+      "sheet": "assets/generated/base-portraits/circus_blade.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/circus_blade#sheet.png",
+      "sheetWidth": 2346,
+      "sheetHeight": 78,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 28.0,
+        "y": 0.0,
+        "width": 27.0,
+        "height": 47.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -34
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "clown": {
+      "sheet": "assets/generated/base-portraits/clown.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/clown#sheet.png",
+      "sheetWidth": 1854,
+      "sheetHeight": 88,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 30.0,
+        "y": 0.0,
+        "width": 27.0,
+        "height": 53.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -34
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "clown_ult": {
+      "sheet": "assets/generated/base-portraits/clown_ult.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/clown_ult#sheet.png",
+      "sheetWidth": 1896,
+      "sheetHeight": 88,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 32.0,
+        "y": 0.0,
+        "width": 29.0,
+        "height": 53.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": 0
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": 0
+      },
+      "missing": [
+        "viewOffsets"
+      ]
+    },
+    "crossbowman": {
+      "sheet": "assets/generated/base-portraits/crossbowman.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/crossbowman#sheet.png",
+      "sheetWidth": 1512,
+      "sheetHeight": 52,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 30.0,
+        "y": 0.0,
+        "width": 29.0,
+        "height": 51.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -26
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -10
+      },
+      "missing": []
+    },
+    "dancer": {
+      "sheet": "assets/generated/base-portraits/dancer.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/dancer#sheet.png",
+      "sheetWidth": 1594,
+      "sheetHeight": 90,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 28.0,
+        "y": 0.0,
+        "width": 27.0,
+        "height": 47.0
+      },
+      "faceOffset": {
+        "x": 2,
+        "y": -32
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "dark_mage": {
+      "sheet": "assets/generated/base-portraits/dark_mage.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/dark_mage#sheet.png",
+      "sheetWidth": 2452,
+      "sheetHeight": 186,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 26.0,
+        "y": 0.0,
+        "width": 27.0,
+        "height": 51.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -34
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "demon": {
+      "sheet": "assets/generated/base-portraits/demon.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/demon#sheet.png",
+      "sheetWidth": 4028,
+      "sheetHeight": 112,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 88.0,
+        "y": 0.0,
+        "width": 31.0,
+        "height": 43.0
+      },
+      "faceOffset": {
+        "x": 4,
+        "y": -26
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -10
+      },
+      "missing": []
+    },
+    "dokkaebi": {
+      "sheet": "assets/generated/base-portraits/dokkaebi.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/dokkaebi#sheet.png",
+      "sheetWidth": 4096,
+      "sheetHeight": 193,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 36.0,
+        "y": 0.0,
+        "width": 35.0,
+        "height": 49.0
+      },
+      "faceOffset": {
+        "x": 2,
+        "y": -34
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "druid": {
+      "sheet": "assets/generated/base-portraits/druid.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/druid#sheet.png",
+      "sheetWidth": 3730,
+      "sheetHeight": 80,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 30.0,
+        "y": 0.0,
+        "width": 29.0,
+        "height": 49.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -34
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "dual_blader": {
+      "sheet": "assets/generated/base-portraits/dual_blader.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/dual_blader#sheet.png",
+      "sheetWidth": 3502,
+      "sheetHeight": 88,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 44.0,
+        "y": 0.0,
+        "width": 43.0,
+        "height": 55.0
+      },
+      "faceOffset": {
+        "x": 2,
+        "y": -32
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "enchanter": {
+      "sheet": "assets/generated/base-portraits/enchanter.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/enchanter#sheet.png",
+      "sheetWidth": 1838,
+      "sheetHeight": 97,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 32.0,
+        "y": 0.0,
+        "width": 31.0,
+        "height": 49.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -34
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "executioner": {
+      "sheet": "assets/generated/base-portraits/executioner.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/executioner#sheet.png",
+      "sheetWidth": 2574,
+      "sheetHeight": 82,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 38.0,
+        "y": 0.0,
+        "width": 37.0,
+        "height": 61.0
+      },
+      "faceOffset": {
+        "x": 5,
+        "y": -37
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "exorcist": {
+      "sheet": "assets/generated/base-portraits/exorcist.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/exorcist#sheet.png",
+      "sheetWidth": 3260,
+      "sheetHeight": 140,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 22.0,
+        "y": 0.0,
+        "width": 21.0,
+        "height": 49.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -34
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "fighter": {
+      "sheet": "assets/generated/base-portraits/fighter.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/fighter#sheet.png",
+      "sheetWidth": 3048,
+      "sheetHeight": 120,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 26.0,
+        "y": 0.0,
+        "width": 25.0,
+        "height": 47.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -34
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "gambler": {
+      "sheet": "assets/generated/base-portraits/gambler.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/gambler#sheet.png",
+      "sheetWidth": 3398,
+      "sheetHeight": 180,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 70.0,
+        "y": 0.0,
+        "width": 27.0,
+        "height": 51.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -34
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "ghost": {
+      "sheet": "assets/generated/base-portraits/ghost.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/ghost#sheet.png",
+      "sheetWidth": 1266,
+      "sheetHeight": 68,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 30.0,
+        "y": 0.0,
+        "width": 29.0,
+        "height": 51.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -26
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "ghost_ult": {
+      "sheet": "assets/generated/base-portraits/ghost_ult.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/ghost_ult#sheet.png",
+      "sheetWidth": 1336,
+      "sheetHeight": 70,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 32.0,
+        "y": 0.0,
+        "width": 31.0,
+        "height": 53.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": 0
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": 0
+      },
+      "missing": [
+        "viewOffsets"
+      ]
+    },
+    "ghoul": {
+      "sheet": "assets/generated/base-portraits/ghoul.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/ghoul#sheet.png",
+      "sheetWidth": 1326,
+      "sheetHeight": 38,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 26.0,
+        "y": 0.0,
+        "width": 27.0,
+        "height": 25.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": 0
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": 0
+      },
+      "missing": [
+        "viewOffsets"
+      ]
+    },
+    "guardian_spirit": {
+      "sheet": "assets/generated/base-portraits/guardian_spirit.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/guardian_spirit#sheet.png",
+      "sheetWidth": 2926,
+      "sheetHeight": 162,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 34.0,
+        "y": 0.0,
+        "width": 33.0,
+        "height": 53.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -36
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "gunner": {
+      "sheet": "assets/generated/base-portraits/gunner.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/gunner#sheet.png",
+      "sheetWidth": 2334,
+      "sheetHeight": 98,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 24.0,
+        "y": 0.0,
+        "width": 23.0,
+        "height": 53.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -36
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "hammerer": {
+      "sheet": "assets/generated/base-portraits/hammerer.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/hammerer#sheet.png",
+      "sheetWidth": 3280,
+      "sheetHeight": 166,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 42.0,
+        "y": 0.0,
+        "width": 41.0,
+        "height": 49.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -34
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "hitman": {
+      "sheet": "assets/generated/base-portraits/hitman.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/hitman#sheet.png",
+      "sheetWidth": 2362,
+      "sheetHeight": 82,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 24.0,
+        "y": 0.0,
+        "width": 23.0,
+        "height": 49.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -34
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "hunter": {
+      "sheet": "assets/generated/base-portraits/hunter.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/hunter#sheet.png",
+      "sheetWidth": 2978,
+      "sheetHeight": 74,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 28.0,
+        "y": 0.0,
+        "width": 27.0,
+        "height": 47.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -34
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "ice_mage": {
+      "sheet": "assets/generated/base-portraits/ice_mage.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/ice_mage#sheet.png",
+      "sheetWidth": 1910,
+      "sheetHeight": 74,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 30.0,
+        "y": 0.0,
+        "width": 29.0,
+        "height": 51.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -37
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "illusionist": {
+      "sheet": "assets/generated/base-portraits/illusionist.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/illusionist#sheet.png",
+      "sheetWidth": 2226,
+      "sheetHeight": 116,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 24.0,
+        "y": 0.0,
+        "width": 23.0,
+        "height": 57.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -36
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "inquisitor": {
+      "sheet": "assets/generated/base-portraits/inquisitor.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/inquisitor#sheet.png",
+      "sheetWidth": 2070,
+      "sheetHeight": 70,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 34.0,
+        "y": 0.0,
+        "width": 33.0,
+        "height": 47.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -32
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "jiangshi": {
+      "sheet": "assets/generated/base-portraits/jiangshi.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/jiangshi#sheet.png",
+      "sheetWidth": 4096,
+      "sheetHeight": 155,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 50.0,
+        "y": 0.0,
+        "width": 27.0,
+        "height": 51.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -36
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "jiangshi_ult": {
+      "sheet": "assets/generated/base-portraits/jiangshi_ult.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/jiangshi_ult#sheet.png",
+      "sheetWidth": 3594,
+      "sheetHeight": 86,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 50.0,
+        "y": 0.0,
+        "width": 27.0,
+        "height": 51.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": 0
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": 0
+      },
+      "missing": [
+        "viewOffsets"
+      ]
+    },
+    "knight": {
+      "sheet": "assets/generated/base-portraits/knight.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/knight#sheet.png",
+      "sheetWidth": 2882,
+      "sheetHeight": 200,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 46.0,
+        "y": 0.0,
+        "width": 45.0,
+        "height": 51.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -34
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "lancer": {
+      "sheet": "assets/generated/base-portraits/lancer.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/lancer#sheet.png",
+      "sheetWidth": 3523,
+      "sheetHeight": 74,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 22.0,
+        "y": 0.0,
+        "width": 51.0,
+        "height": 47.0
+      },
+      "faceOffset": {
+        "x": 3,
+        "y": -32
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "lightning_mage": {
+      "sheet": "assets/generated/base-portraits/lightning_mage.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/lightning_mage#sheet.png",
+      "sheetWidth": 2128,
+      "sheetHeight": 106,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 30.0,
+        "y": 0.0,
+        "width": 29.0,
+        "height": 57.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -36
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "magic_knight": {
+      "sheet": "assets/generated/base-portraits/magic_knight.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/magic_knight#sheet.png",
+      "sheetWidth": 2798,
+      "sheetHeight": 97,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 30.0,
+        "y": 0.0,
+        "width": 33.0,
+        "height": 57.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -33
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "magic_knight_ult": {
+      "sheet": "assets/generated/base-portraits/magic_knight_ult.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/magic_knight_ult#sheet.png",
+      "sheetWidth": 2536,
+      "sheetHeight": 97,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 30.0,
+        "y": 0.0,
+        "width": 33.0,
+        "height": 57.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": 0
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": 0
+      },
+      "missing": [
+        "viewOffsets"
+      ]
+    },
+    "monk": {
+      "sheet": "assets/generated/base-portraits/monk.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/monk#sheet.png",
+      "sheetWidth": 2532,
+      "sheetHeight": 164,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 26.0,
+        "y": 0.0,
+        "width": 27.0,
+        "height": 51.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -34
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "necromancer": {
+      "sheet": "assets/generated/base-portraits/necromancer.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/necromancer#sheet.png",
+      "sheetWidth": 2396,
+      "sheetHeight": 168,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 44.0,
+        "y": 0.0,
+        "width": 43.0,
+        "height": 63.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -44
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "nightmare": {
+      "sheet": "assets/generated/base-portraits/nightmare.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/nightmare#sheet.png",
+      "sheetWidth": 1264,
+      "sheetHeight": 52,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 28.0,
+        "y": 0.0,
+        "width": 29.0,
+        "height": 51.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -30
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -10
+      },
+      "missing": []
+    },
+    "ninja": {
+      "sheet": "assets/generated/base-portraits/ninja.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/ninja#sheet.png",
+      "sheetWidth": 4096,
+      "sheetHeight": 125,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 42.0,
+        "y": 0.0,
+        "width": 41.0,
+        "height": 41.0
+      },
+      "faceOffset": {
+        "x": 1,
+        "y": -26
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -8
+      },
+      "missing": []
+    },
+    "ogre": {
+      "sheet": "assets/generated/base-portraits/ogre.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/ogre#sheet.png",
+      "sheetWidth": 2746,
+      "sheetHeight": 148,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 50.0,
+        "y": 0.0,
+        "width": 51.0,
+        "height": 67.0
+      },
+      "faceOffset": {
+        "x": 7,
+        "y": -54
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "plague_doctor": {
+      "sheet": "assets/generated/base-portraits/plague_doctor.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/plague_doctor#sheet.png",
+      "sheetWidth": 1576,
+      "sheetHeight": 106,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 26.0,
+        "y": 0.0,
+        "width": 25.0,
+        "height": 53.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -36
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "poison_dart_hunter": {
+      "sheet": "assets/generated/base-portraits/poison_dart_hunter.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/poison_dart_hunter#sheet.png",
+      "sheetWidth": 1458,
+      "sheetHeight": 50,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 36.0,
+        "y": 0.0,
+        "width": 35.0,
+        "height": 47.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -32
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "pole_warrior": {
+      "sheet": "assets/generated/base-portraits/pole_warrior.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/pole_warrior#sheet.png",
+      "sheetWidth": 1884,
+      "sheetHeight": 96,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 20.0,
+        "y": 0.0,
+        "width": 19.0,
+        "height": 49.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -34
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "priest": {
+      "sheet": "assets/generated/base-portraits/priest.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/priest#sheet.png",
+      "sheetWidth": 4096,
+      "sheetHeight": 463,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 26.0,
+        "y": 0.0,
+        "width": 25.0,
+        "height": 51.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -30
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "prisoner": {
+      "sheet": "assets/generated/base-portraits/prisoner.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/prisoner#sheet.png",
+      "sheetWidth": 2430,
+      "sheetHeight": 128,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 28.0,
+        "y": 0.0,
+        "width": 27.0,
+        "height": 49.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -34
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "pyromancer": {
+      "sheet": "assets/generated/base-portraits/pyromancer.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/pyromancer#sheet.png",
+      "sheetWidth": 4096,
+      "sheetHeight": 324,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 30.0,
+        "y": 0.0,
+        "width": 27.0,
+        "height": 51.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -35
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -14
+      },
+      "missing": []
+    },
+    "pythoness": {
+      "sheet": "assets/generated/base-portraits/pythoness.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/pythoness#sheet.png",
+      "sheetWidth": 4096,
+      "sheetHeight": 257,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 28.0,
+        "y": 0.0,
+        "width": 27.0,
+        "height": 41.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -28
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -9
+      },
+      "missing": []
+    },
+    "sand_mage": {
+      "sheet": "assets/generated/base-portraits/sand_mage.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/sand_mage#sheet.png",
+      "sheetWidth": 1980,
+      "sheetHeight": 80,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 46.0,
+        "y": 0.0,
+        "width": 43.0,
+        "height": 51.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -34
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "shadowmancer": {
+      "sheet": "assets/generated/base-portraits/shadowmancer.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/shadowmancer#sheet.png",
+      "sheetWidth": 2821,
+      "sheetHeight": 97,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 22.0,
+        "y": 0.0,
+        "width": 21.0,
+        "height": 51.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -34
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "shield_bearer": {
+      "sheet": "assets/generated/base-portraits/shield_bearer.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/shield_bearer#sheet.png",
+      "sheetWidth": 2904,
+      "sheetHeight": 132,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 56.0,
+        "y": 0.0,
+        "width": 55.0,
+        "height": 69.0
+      },
+      "faceOffset": {
+        "x": 4,
+        "y": -30
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "siege_breaker": {
+      "sheet": "assets/generated/base-portraits/siege_breaker.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/siege_breaker#sheet.png",
+      "sheetWidth": 1972,
+      "sheetHeight": 97,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 36.0,
+        "y": 0.0,
+        "width": 35.0,
+        "height": 57.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -36
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "siege_breaker_ult": {
+      "sheet": "assets/generated/base-portraits/siege_breaker_ult.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/siege_breaker_ult#sheet.png",
+      "sheetWidth": 2032,
+      "sheetHeight": 97,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 38.0,
+        "y": 0.0,
+        "width": 37.0,
+        "height": 59.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": 0
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": 0
+      },
+      "missing": [
+        "viewOffsets"
+      ]
+    },
+    "soldier": {
+      "sheet": "assets/generated/base-portraits/soldier.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/soldier#sheet.png",
+      "sheetWidth": 4007,
+      "sheetHeight": 88,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 52.0,
+        "y": 0.0,
+        "width": 51.0,
+        "height": 41.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -24
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -9
+      },
+      "missing": []
+    },
+    "spirit_caller": {
+      "sheet": "assets/generated/base-portraits/spirit_caller.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/spirit_caller#sheet.png",
+      "sheetWidth": 3076,
+      "sheetHeight": 100,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 44.0,
+        "y": 0.0,
+        "width": 21.0,
+        "height": 55.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -36
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "swordman": {
+      "sheet": "assets/generated/base-portraits/swordman.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/swordman#sheet.png",
+      "sheetWidth": 2562,
+      "sheetHeight": 64,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 48.0,
+        "y": 0.0,
+        "width": 49.0,
+        "height": 51.0
+      },
+      "faceOffset": {
+        "x": -1,
+        "y": -34
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -11
+      },
+      "missing": []
+    },
+    "taoist": {
+      "sheet": "assets/generated/base-portraits/taoist.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/taoist#sheet.png",
+      "sheetWidth": 3918,
+      "sheetHeight": 116,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 28.0,
+        "y": 0.0,
+        "width": 25.0,
+        "height": 49.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -34
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "vampire": {
+      "sheet": "assets/generated/base-portraits/vampire.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/vampire#sheet.png",
+      "sheetWidth": 2624,
+      "sheetHeight": 90,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 30.0,
+        "y": 0.0,
+        "width": 25.0,
+        "height": 51.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -36
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "voodoo_shaman": {
+      "sheet": "assets/generated/base-portraits/voodoo_shaman.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/voodoo_shaman#sheet.png",
+      "sheetWidth": 2690,
+      "sheetHeight": 170,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 24.0,
+        "y": 0.0,
+        "width": 23.0,
+        "height": 49.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -34
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "werewolf": {
+      "sheet": "assets/generated/base-portraits/werewolf.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/werewolf#sheet.png",
+      "sheetWidth": 2974,
+      "sheetHeight": 114,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 52.0,
+        "y": 0.0,
+        "width": 51.0,
+        "height": 61.0
+      },
+      "faceOffset": {
+        "x": 26,
+        "y": -42
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "whip_master": {
+      "sheet": "assets/generated/base-portraits/whip_master.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/whip_master#sheet.png",
+      "sheetWidth": 3520,
+      "sheetHeight": 88,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 28.0,
+        "y": 0.0,
+        "width": 27.0,
+        "height": 47.0
+      },
+      "faceOffset": {
+        "x": 1,
+        "y": -34
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "white_mage": {
+      "sheet": "assets/generated/base-portraits/white_mage.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/white_mage#sheet.png",
+      "sheetWidth": 4096,
+      "sheetHeight": 156,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 28.0,
+        "y": 0.0,
+        "width": 27.0,
+        "height": 51.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -34
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    },
+    "wind_mage": {
+      "sheet": "assets/generated/base-portraits/wind_mage.png",
+      "sheetAsset": "asset/base/aseprite_resources/champions/wind_mage#sheet.png",
+      "sheetWidth": 1846,
+      "sheetHeight": 78,
+      "frame": {
+        "animation": "idle",
+        "index": 0,
+        "x": 26.0,
+        "y": 0.0,
+        "width": 23.0,
+        "height": 61.0
+      },
+      "faceOffset": {
+        "x": 0,
+        "y": -36
+      },
+      "centerOffset": {
+        "x": 0,
+        "y": -12
+      },
+      "missing": []
+    }
+  },
+  "warnings": [
+    {
+      "sprite": "clown_ult",
+      "missing": [
+        "viewOffsets"
+      ]
+    },
+    {
+      "sprite": "ghost_ult",
+      "missing": [
+        "viewOffsets"
+      ]
+    },
+    {
+      "sprite": "ghoul",
+      "missing": [
+        "viewOffsets"
+      ]
+    },
+    {
+      "sprite": "jiangshi_ult",
+      "missing": [
+        "viewOffsets"
+      ]
+    },
+    {
+      "sprite": "magic_knight_ult",
+      "missing": [
+        "viewOffsets"
+      ]
+    },
+    {
+      "sprite": "siege_breaker_ult",
+      "missing": [
+        "viewOffsets"
+      ]
+    }
+  ]
+}

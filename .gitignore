@@ -1,0 +1,76 @@
+# Runtime probe output — never commit
+data/probe-output/
+
+# Local config with secrets/paths
+config/config.json
+
+# Node
+node_modules/
+npm-debug.log*
+dist/
+src-tauri/target/
+
+# Generated application state
+data/cache/
+data/*.sqlite
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# ── Added for GitHub source upload: build outputs & local-only files ──
+# (Files stay on your disk; git just won't upload them.)
+
+# Tauri v2 generated files (recreated by `tauri build`)
+src-tauri/gen/
+
+# Font source archives — large downloads, not build inputs. The fonts actually
+# used live in assets/fonts. JetBrainsMonoNerd.zip is 124 MB, above GitHub's
+# 100 MB per-file limit, so this MUST be excluded or the push is rejected.
+font-sources/
+
+# Local dev-tool runtime logs and machine-specific editor settings
+.codex-runtime/
+.claude/settings.local.json
+
+# Local backup snapshots (kept on disk, not part of the source tree)
+backups/
+
+# Prebuilt legacy binary (borrowed save probe, superseded by the exporter mod)
+tools/*.exe
+# Its runner script — unused by the app and points at the excluded probe exe
+scripts/run-save-probe.ps1
+
+# Local development / reverse-engineering notes
+memory/
+
+# ── Copyright / licensing exclusions (public repo is code-transparency only) ──
+# These stay on your disk; git just won't publish them.
+
+# Third-party mod-champion art (NOT base-game; produced via the forge parser).
+# Not ours to publish.
+assets/generated/mod-portraits/
+
+# Game UI screenshots — unused by the current app (screenshot detection was
+# removed) and not part of the base-game portrait bundle.
+assets/grids/
+
+# Unused build script tied to the TFM2 Forge Aseprite parser (author does not
+# permit redistribution). The parser itself was never vendored here; this script
+# only loaded it from an external path. Kept locally, excluded from the release.
+scripts/build-mod-portrait-catalog.py
+
+# Prototype images of unverified origin (exclude to be safe).
+design/prototypes/player-hub/*.png
+
+# Included by permission: base-game champion art (the devs allow mods to
+# redistribute assets from the unbundled base game — credit them in the README):
+#   assets/champions/                base champion sprite sheets
+#   assets/generated/base-portraits/ portraits cropped from those sheets
+# Also included: assets/fonts (SIL OFL), assets/Glyphs and assets/app-icon.svg
+# (your own artwork), and data/catalog (factual game data compiled into the app).
+
+# Outdated root README — excluded from the public repo (kept on local disk).
+# Anchored with a leading slash so component READMEs under src/ still publish.
+/README.md

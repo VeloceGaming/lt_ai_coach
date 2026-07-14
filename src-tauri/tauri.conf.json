@@ -1,0 +1,49 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "LT AI Coach",
+  "version": "0.1.0",
+  "identifier": "com.lttools.lt-ai-coach",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "LT AI Coach",
+        "width": 1600,
+        "height": 1000,
+        "minWidth": 1600,
+        "minHeight": 1000,
+        "maxWidth": 1600,
+        "maxHeight": 1000,
+        "decorations": false,
+        "shadow": false,
+        "alwaysOnTop": false,
+        "resizable": false,
+        "maximizable": false
+      },
+      {
+        "label": "overlay",
+        "title": "LT AI Coach — Overlay",
+        "width": 980,
+        "height": 300,
+        "resizable": false,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "visible": false,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": false
+  }
+}

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LT AI Coach — Tier list (neutral theme)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.24.0/dist/tabler-icons.min.css">
+<style>
+:root{
+--color-background-primary:#ffffff;--color-background-secondary:#f5f4ef;--color-background-tertiary:#ecebe4;
+--color-background-info:#e6f1fb;--color-background-danger:#fcebeb;--color-background-success:#e6f4ea;--color-background-warning:#faeeda;
+--color-text-primary:#1a1a18;--color-text-secondary:#5f5e5a;--color-text-tertiary:#8a8980;
+--color-text-info:#185fa5;--color-text-danger:#a32d2d;--color-text-success:#0f6e56;--color-text-warning:#854f0b;
+--color-border-tertiary:rgba(0,0,0,.12);--color-border-secondary:rgba(0,0,0,.22);--color-border-primary:rgba(0,0,0,.32);
+--color-border-info:#378add;--color-border-danger:#e24b4a;--color-border-success:#1d9e75;--color-border-warning:#ba7517;
+--font-sans:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;--font-mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;--font-serif:Georgia,serif;
+--border-radius-md:8px;--border-radius-lg:12px;--border-radius-xl:16px;
+}
+@media (prefers-color-scheme:dark){:root{
+--color-background-primary:#2b2b2e;--color-background-secondary:#323235;--color-background-tertiary:#3a3a3d;
+--color-background-info:#26384a;--color-background-danger:#3a2727;--color-background-success:#27372c;--color-background-warning:#3a3320;
+--color-text-primary:#ececec;--color-text-secondary:#a2a2a4;--color-text-tertiary:#6f6f72;
+--color-text-info:#6aa8e0;--color-text-danger:#e08a82;--color-text-success:#6ec08c;--color-text-warning:#d8b06a;
+--color-border-tertiary:rgba(255,255,255,.10);--color-border-secondary:rgba(255,255,255,.18);--color-border-primary:rgba(255,255,255,.28);
+}}
+body{margin:0;padding:28px;background:#e9e8e2;display:flex;justify-content:center;align-items:flex-start;font-family:var(--font-sans)}
+@media (prefers-color-scheme:dark){body{background:#1a1a1c}}
+.frame{width:100%;max-width:1040px}
+.note{max-width:1040px;margin:0 auto 14px;font:13px/1.5 var(--font-sans);color:#666}
+@media (prefers-color-scheme:dark){.note{color:#999}}
+.tlf{font-family:var(--font-sans)}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.ul{text-transform:uppercase;letter-spacing:.9px}
+.railitem{width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:var(--border-radius-md);color:var(--color-text-secondary)}
+.railitem i{font-size:18px}
+.railitem.on{color:var(--color-text-info);background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary)}
+.tile{position:relative;width:64px;cursor:pointer}
+.port{width:64px;height:64px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:500;color:#26252b;border:0.5px solid rgba(0,0,0,.10)}
+.tile.sel .port{outline:2px solid var(--color-border-info);outline-offset:2px}
+.nm{font-size:11px;text-align:center;margin-top:5px;color:var(--color-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:64px}
+.bdg{position:absolute;top:-6px;right:-6px;display:inline-flex;align-items:center;gap:1px;font-size:11px;font-weight:500;padding:1px 5px;border-radius:7px;border:1.5px solid var(--color-background-primary)}
+.role{position:absolute;bottom:6px;left:6px;width:18px;height:18px;border-radius:5px;background:rgba(12,14,18,.58);display:flex;align-items:center;justify-content:center;color:#f0f0f0}
+.rgi{width:12px;height:12px;fill:currentColor;display:block}
+.trow{display:flex;gap:12px;align-items:flex-start}
+.tlab{width:34px;height:64px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:500;border-radius:9px}
+.grid{flex:1;display:flex;flex-wrap:wrap;gap:12px;align-content:flex-start}
+.fb{height:30px;padding:0 13px;display:flex;align-items:center;gap:6px;border-radius:8px;border:0.5px solid var(--color-border-tertiary);color:var(--color-text-secondary);font-size:12px}
+.fb.on{border-color:var(--color-border-info);color:var(--color-text-info);background:var(--color-background-info)}
+</style>
+</head>
+<body>
+<div class="frame">
+<p class="note">LT AI Coach — full-mode tier list, NEUTRAL (default) theme. Dense portrait grid in coloured tier rows; lane glyph + buff/nerf badge per tile; right SIDE PANEL with projected win rate, the interactive win-rate line chart (prev → current → projected — hover the points), changed-this-patch list, manual tier override (S-F), and a Patch Notes link. Tile squares are placeholders for the tall/narrow champion sprites.</p>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="r-top" viewBox="0 0 271 266"><path opacity=".16" d="M170.955 168.581L99.7239 168.581L99.7239 97.3495L170.955 97.3495L170.955 168.581Z"/><path opacity=".16" d="M84.3171 216.068L218.443 216.068L218.443 81.9427L270.679 29.7064L270.679 265.93L34.4552 265.93L84.3171 216.068Z"/><path d="M239.943 0L0 0L0 239.943L52.2363 187.707L52.2363 49.8619L190.081 49.8619L239.943 0Z"/></symbol>
+<symbol id="r-jng" viewBox="0 0 265 297"><path d="M153.147 142.463C158.846 153.86 161.853 169.372 162.645 175.704L175.704 144.837C174.912 142.463 173.804 132.965 175.704 113.97C177.603 94.9751 201.031 31.6584 212.507 2.37438C202.614 15.8292 180.453 46.3004 170.955 60.5466C161.458 74.7929 145.628 104.473 138.901 117.532C141.275 121.093 147.449 131.066 153.147 142.463Z"/><path d="M192.325 231.502C185.676 237.2 176.891 247.331 173.33 251.684L172.142 217.256C173.33 212.507 176.416 200.635 179.266 191.137C182.115 181.64 189.95 161.458 205.384 134.152C209.341 128.216 220.58 113.258 229.127 105.66C237.675 98.0618 251.684 89.0392 264.743 81.916C246.935 102.098 249.31 99.7239 232.689 129.404C219.16 153.563 216.86 191.533 217.256 213.694C211.715 217.256 198.973 225.803 192.325 231.502Z"/><path d="M144.837 211.32C144.837 256.908 136.922 287.3 132.965 296.797C102.573 251.209 63.3167 220.817 47.4875 211.32C46.3004 197.073 42.7388 164.069 37.99 146.024C33.2413 127.979 10.6847 95.7666 0 81.916C10.6847 86.6648 36.5654 100.199 54.6107 116.344C72.656 132.49 85.0819 157.896 89.0392 168.581C89.0392 157.5 88.3268 129.166 85.4776 104.473C82.6283 79.7791 61.3381 24.5352 51.0491 0C60.1509 13.8505 78.3545 35.6157 92.6007 60.5466C102.404 77.702 144.837 154.335 144.837 211.32Z"/></symbol>
+<symbol id="r-mid" viewBox="0 0 271 266"><path opacity=".16" d="M0 0H201.227L151.365 49.8619H52.2363V148.991L0 201.227V0Z"/><path opacity=".16" d="M69.5978 265.93H270.679V64.8484L218.443 117.085V216.068H119.46L69.5978 265.93Z"/><path d="M270.679 43.29L48.0381 265.931H0V222.785L222.785 0H270.679V43.29Z"/></symbol>
+<symbol id="r-bot" viewBox="0 0 271 266"><path opacity=".16" d="M99.7239 97.3495H170.955V168.581H99.7239V97.3495Z"/><path opacity=".16" d="M186.362 49.8619H52.2363V183.988L0 236.224V0H236.224L186.362 49.8619Z"/><path d="M30.7359 265.93H270.679V25.9871L218.443 78.2234V216.068H80.5978L30.7359 265.93Z"/></symbol>
+<symbol id="r-sup" viewBox="0 0 323 271"><path d="M149.586 93.7879L160.27 108.034L172.142 93.7879L200.635 238.625L160.27 270.679L122.28 238.625L149.586 93.7879Z"/><path d="M207.758 154.335L186.389 85.4776L218.443 53.4235L322.915 56.9851C318.167 62.1295 306.057 72.8934 295.61 79.5416C285.163 86.1899 270.679 93.7879 257.62 94.9751H230.315L257.62 134.152L207.758 154.335Z"/><path d="M160.27 77.1673L111.596 21.3694L122.28 0H200.635L210.132 21.3694L160.27 77.1673Z"/><path d="M132.965 85.4776L104.473 56.9851H0C3.9573 60.1509 7.12313 70.0441 30.8669 81.916C49.244 91.1046 64.5039 95.3708 67.6698 94.9751H91.4135L64.1082 134.152L115.157 154.335L132.965 85.4776Z"/></symbol>
+</defs></svg>
+<div class="tlf" style="display:flex;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;background:var(--color-background-primary)">
+
+  <nav style="width:48px;flex-shrink:0;background:var(--color-background-secondary);border-right:0.5px solid var(--color-border-tertiary);display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:5px">
+    <div class="railitem"><i class="ti ti-database-import" aria-hidden="true"></i></div>
+    <div class="railitem on"><i class="ti ti-stairs-up" aria-hidden="true"></i></div>
+    <div class="railitem"><i class="ti ti-layout-grid" aria-hidden="true"></i></div>
+    <div class="railitem"><i class="ti ti-notes" aria-hidden="true"></i></div>
+    <div class="railitem" style="margin-top:auto"><i class="ti ti-settings" aria-hidden="true"></i></div>
+  </nav>
+
+  <main style="flex:1;min-width:0;padding:16px 18px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <h2 style="font-size:18px;margin:0;font-weight:500;color:var(--color-text-primary)">Tier list</h2>
+      <span style="font-size:12px;color:var(--color-text-tertiary)">142 champions · patch 14.12</span>
+      <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
+        <span class="fb on">All roles</span>
+        <span class="fb" title="Top"><svg class="rgi"><use href="#r-top"/></svg>TOP</span>
+        <span class="fb" title="Jungle"><svg class="rgi"><use href="#r-jng"/></svg>JNG</span>
+        <span class="fb" title="Mid"><svg class="rgi"><use href="#r-mid"/></svg>MID</span>
+        <span class="fb" title="Bot"><svg class="rgi"><use href="#r-bot"/></svg>ADC</span>
+        <span class="fb" title="Support"><svg class="rgi"><use href="#r-sup"/></svg>SUP</span>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+
+      <div class="trow">
+        <div class="tlab" style="background:#E1F5EE;color:#0f5b46">S</div>
+        <div class="grid">
+          <div class="tile"><div class="port" style="background:#CECBF6">Au</div><span class="role"><svg class="rgi"><use href="#r-mid"/></svg></span><span class="bdg mono" style="color:#3B6D11;background:#EAF3DE"><i class="ti ti-caret-up" style="font-size:10px"></i>2.4</span><div class="nm">Aurelia</div></div>
+          <div class="tile"><div class="port" style="background:#9FE1CB">Ko</div><span class="role"><svg class="rgi"><use href="#r-jng"/></svg></span><div class="nm">Korrin</div></div>
+          <div class="tile"><div class="port" style="background:#F5C4B3">Va</div><span class="role"><svg class="rgi"><use href="#r-top"/></svg></span><span class="bdg mono" style="color:#A32D2D;background:#FCEBEB"><i class="ti ti-caret-down" style="font-size:10px"></i>1.1</span><div class="nm">Vael</div></div>
+          <div class="tile"><div class="port" style="background:#F4C0D1">Sy</div><span class="role"><svg class="rgi"><use href="#r-sup"/></svg></span><div class="nm">Sygna</div></div>
+          <div class="tile"><div class="port" style="background:#B5D4F4">Te</div><span class="role"><svg class="rgi"><use href="#r-bot"/></svg></span><span class="bdg mono" style="color:#3B6D11;background:#EAF3DE"><i class="ti ti-caret-up" style="font-size:10px"></i>1.9</span><div class="nm">Tessik</div></div>
+          <div class="tile"><div class="port" style="background:#FAC775">Gr</div><span class="role"><svg class="rgi"><use href="#r-mid"/></svg></span><div class="nm">Grell</div></div>
+        </div>
+      </div>
+
+      <div class="trow">
+        <div class="tlab" style="background:#EAF3DE;color:#3B6D11">A</div>
+        <div class="grid">
+          <div class="tile sel"><div class="port" style="background:#B5D4F4">Dr</div><span class="role"><svg class="rgi"><use href="#r-bot"/></svg></span><span class="bdg mono" style="color:#3B6D11;background:#EAF3DE"><i class="ti ti-caret-up" style="font-size:10px"></i>3.6</span><div class="nm" style="color:var(--color-text-info)">Drask</div></div>
+          <div class="tile"><div class="port" style="background:#D3D1C7">Th</div><span class="role"><svg class="rgi"><use href="#r-top"/></svg></span><div class="nm">Thorne</div></div>
+          <div class="tile"><div class="port" style="background:#CECBF6">Mi</div><span class="role"><svg class="rgi"><use href="#r-mid"/></svg></span><span class="bdg mono" style="color:#A32D2D;background:#FCEBEB"><i class="ti ti-caret-down" style="font-size:10px"></i>0.8</span><div class="nm">Mira</div></div>
+          <div class="tile"><div class="port" style="background:#9FE1CB">Bo</div><span class="role"><svg class="rgi"><use href="#r-jng"/></svg></span><div class="nm">Bouldra</div></div>
+          <div class="tile"><div class="port" style="background:#F5C4B3">Re</div><span class="role"><svg class="rgi"><use href="#r-sup"/></svg></span><div class="nm">Resh</div></div>
+          <div class="tile"><div class="port" style="background:#FAC775">Ny</div><span class="role"><svg class="rgi"><use href="#r-mid"/></svg></span><span class="bdg mono" style="color:#3B6D11;background:#EAF3DE"><i class="ti ti-caret-up" style="font-size:10px"></i>1.2</span><div class="nm">Nyx</div></div>
+          <div class="tile"><div class="port" style="background:#B5D4F4">Ca</div><span class="role"><svg class="rgi"><use href="#r-bot"/></svg></span><div class="nm">Calder</div></div>
+        </div>
+      </div>
+
+      <div class="trow">
+        <div class="tlab" style="background:#FAEEDA;color:#7a4d0a">B</div>
+        <div class="grid">
+          <div class="tile"><div class="port" style="background:#F4C0D1">Px</div><span class="role"><svg class="rgi"><use href="#r-sup"/></svg></span><div class="nm">Pyx</div></div>
+          <div class="tile"><div class="port" style="background:#D3D1C7">Ga</div><span class="role"><svg class="rgi"><use href="#r-top"/></svg></span><span class="bdg mono" style="color:#3B6D11;background:#EAF3DE"><i class="ti ti-caret-up" style="font-size:10px"></i>1.5</span><div class="nm">Garran</div></div>
+          <div class="tile"><div class="port" style="background:#B5D4F4">Ne</div><span class="role"><svg class="rgi"><use href="#r-bot"/></svg></span><div class="nm">Nessa</div></div>
+          <div class="tile"><div class="port" style="background:#9FE1CB">Ve</div><span class="role"><svg class="rgi"><use href="#r-jng"/></svg></span><div class="nm">Velko</div></div>
+          <div class="tile"><div class="port" style="background:#CECBF6">Il</div><span class="role"><svg class="rgi"><use href="#r-mid"/></svg></span><div class="nm">Ilura</div></div>
+          <div class="tile"><div class="port" style="background:#FAC775">Os</div><span class="role"><svg class="rgi"><use href="#r-top"/></svg></span><div class="nm">Osmar</div></div>
+          <div class="tile"><div class="port" style="background:#F5C4B3">Du</div><span class="role"><svg class="rgi"><use href="#r-sup"/></svg></span><span class="bdg mono" style="color:#A32D2D;background:#FCEBEB"><i class="ti ti-caret-down" style="font-size:10px"></i>2.0</span><div class="nm">Dusa</div></div>
+        </div>
+      </div>
+
+      <div class="trow">
+        <div class="tlab" style="background:#ECEAE2;color:#5f5e5a">C</div>
+        <div class="grid" style="opacity:.82">
+          <div class="tile"><div class="port" style="background:#D3D1C7">Ho</div><span class="role"><svg class="rgi"><use href="#r-sup"/></svg></span><div class="nm">Holt</div></div>
+          <div class="tile"><div class="port" style="background:#D3D1C7">De</div><span class="role"><svg class="rgi"><use href="#r-top"/></svg></span><div class="nm">Dren</div></div>
+          <div class="tile"><div class="port" style="background:#D3D1C7">Cs</div><span class="role"><svg class="rgi"><use href="#r-mid"/></svg></span><div class="nm">Cassis</div></div>
+          <div class="tile"><div class="port" style="background:#D3D1C7">Lo</div><span class="role"><svg class="rgi"><use href="#r-jng"/></svg></span><div class="nm">Loka</div></div>
+          <div class="tile"><div class="port" style="background:#D3D1C7">Wr</div><span class="role"><svg class="rgi"><use href="#r-bot"/></svg></span><div class="nm">Wrenn</div></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <aside style="width:232px;flex-shrink:0;border-left:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);padding:15px;display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;align-items:flex-start;gap:11px">
+      <div style="width:54px;height:54px;border-radius:9px;background:#B5D4F4;color:#26252b;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:500;flex-shrink:0">Dr</div>
+      <div style="min-width:0">
+        <div style="font-size:16px;font-weight:500">Drask</div>
+        <div style="font-size:11px;color:var(--color-text-tertiary)">ADC · A tier</div>
+        <span class="mono" style="display:inline-flex;align-items:center;gap:2px;font-size:11px;font-weight:500;color:#3B6D11;background:#EAF3DE;padding:1px 7px;border-radius:7px;margin-top:6px"><i class="ti ti-caret-up" style="font-size:10px"></i>buffed +3.6</span>
+      </div>
+      <i class="ti ti-x" style="font-size:15px;color:var(--color-text-tertiary);margin-left:auto" aria-hidden="true"></i>
+    </div>
+
+    <div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:9px;padding:11px">
+      <div class="ul" style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:8px">Projected win rate</div>
+      <div style="display:flex;align-items:baseline;gap:8px">
+        <span class="mono" style="font-size:14px;color:var(--color-text-tertiary);text-decoration:line-through">48.9%</span>
+        <i class="ti ti-arrow-right" style="font-size:13px;color:var(--color-text-tertiary)" aria-hidden="true"></i>
+        <span class="mono" style="font-size:21px;font-weight:500;color:#1d9e75">52.5%</span>
+      </div>
+      <svg viewBox="0 0 200 110" style="width:100%;height:auto;margin-top:8px" role="img" aria-label="Win rate: 48.9% previous patch, 50.1% current, projected 52.5%">
+        <line x1="18" y1="88" x2="194" y2="88" stroke="rgba(128,128,128,.22)" stroke-width="1"/>
+        <line x1="18" y1="54" x2="194" y2="54" stroke="rgba(128,128,128,.22)" stroke-width="1"/>
+        <line x1="18" y1="20" x2="194" y2="20" stroke="rgba(128,128,128,.22)" stroke-width="1"/>
+        <text x="2" y="91" fill="#8a8980" font-size="9" font-family="monospace">45</text>
+        <text x="2" y="57" fill="#8a8980" font-size="9" font-family="monospace">50</text>
+        <text x="2" y="23" fill="#8a8980" font-size="9" font-family="monospace">55</text>
+        <polyline points="32,62 104,54" fill="none" stroke="#378add" stroke-width="2.5" stroke-linecap="round"/>
+        <polyline points="104,54 176,38" fill="none" stroke="#1d9e75" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="4 3"/>
+        <circle class="wp" data-l="14.11" data-v="48.9%" cx="32" cy="62" r="4.5" fill="var(--color-background-primary)" stroke="#378add" stroke-width="2.5"/>
+        <circle class="wp" data-l="14.12 now" data-v="50.1%" cx="104" cy="54" r="4.5" fill="var(--color-background-primary)" stroke="#378add" stroke-width="2.5"/>
+        <circle class="wp" data-l="projected" data-v="52.5%" cx="176" cy="38" r="5" fill="#1d9e75" stroke="var(--color-background-primary)" stroke-width="2"/>
+      </svg>
+      <div style="display:flex;justify-content:space-between;margin-top:2px">
+        <span class="mono" style="font-size:9px;color:var(--color-text-tertiary)">14.11</span>
+        <span class="mono" style="font-size:9px;color:var(--color-text-tertiary)">14.12</span>
+        <span class="mono" style="font-size:9px;color:#1d9e75">proj</span>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:7px;margin-top:8px;border-top:0.5px solid var(--color-border-tertiary);padding-top:8px">
+        <span class="ul" id="wr-l" style="font-size:10px;color:var(--color-text-tertiary)">Projected</span>
+        <span class="mono" id="wr-v" style="font-size:18px;font-weight:500;color:#1d9e75;margin-left:auto">52.5%</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="ul" style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:8px">Changed this patch</div>
+      <div style="display:flex;flex-direction:column;gap:7px">
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--color-text-secondary)"><i class="ti ti-caret-up" style="font-size:11px;color:#1d9e75" aria-hidden="true"></i>Q damage&nbsp;<span class="mono" style="color:var(--color-text-tertiary);margin-left:auto">210&#8594;245</span></div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--color-text-secondary)"><i class="ti ti-caret-up" style="font-size:11px;color:#1d9e75" aria-hidden="true"></i>Attack speed ratio&nbsp;<span class="mono" style="color:var(--color-text-tertiary);margin-left:auto">+8%</span></div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--color-text-secondary)"><i class="ti ti-minus" style="font-size:11px;color:var(--color-text-tertiary)" aria-hidden="true"></i>Base armor&nbsp;<span class="mono" style="color:var(--color-text-tertiary);margin-left:auto">unchanged</span></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="ul" style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:8px">Your tier override</div>
+      <div style="display:flex;gap:5px">
+        <span class="mono" style="flex:1;text-align:center;font-size:12px;padding:5px 0;border-radius:7px;border:0.5px solid var(--color-border-tertiary);color:var(--color-text-secondary)">S</span>
+        <span class="mono" style="flex:1;text-align:center;font-size:12px;padding:5px 0;border-radius:7px;background:var(--color-background-info);color:var(--color-text-info);font-weight:500">A</span>
+        <span class="mono" style="flex:1;text-align:center;font-size:12px;padding:5px 0;border-radius:7px;border:0.5px solid var(--color-border-tertiary);color:var(--color-text-secondary)">B</span>
+        <span class="mono" style="flex:1;text-align:center;font-size:12px;padding:5px 0;border-radius:7px;border:0.5px solid var(--color-border-tertiary);color:var(--color-text-secondary)">C</span>
+        <span class="mono" style="flex:1;text-align:center;font-size:12px;padding:5px 0;border-radius:7px;border:0.5px solid var(--color-border-tertiary);color:var(--color-text-secondary)">D</span>
+        <span class="mono" style="flex:1;text-align:center;font-size:12px;padding:5px 0;border-radius:7px;border:0.5px solid var(--color-border-tertiary);color:var(--color-text-secondary)">F</span>
+      </div>
+    </div>
+
+    <a href="#" onclick="return false" style="font-size:12px;color:var(--color-text-info);text-decoration:none;display:inline-flex;align-items:center;gap:5px;margin-top:auto"><i class="ti ti-notes" style="font-size:14px"></i>Open Drask in patch notes &#8594;</a>
+  </aside>
+
+</div>
+</div>
+<script>
+(function(){
+  var l=document.getElementById('wr-l'),v=document.getElementById('wr-v');
+  document.querySelectorAll('.wp').forEach(function(p){
+    p.style.cursor='pointer';
+    p.addEventListener('mouseenter',function(){
+      l.textContent=p.getAttribute('data-l');
+      v.textContent=p.getAttribute('data-v');
+      v.style.color=p.getAttribute('data-l')==='projected'?'#1d9e75':'#378add';
+    });
+  });
+})();
+</script>
+</body>
+</html>
