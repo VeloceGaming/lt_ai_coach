@@ -95,9 +95,14 @@ npm run tauri:build
 ## Translations
 
 English text is built into the application. Additional languages use
-`translations/<language-tag>/base.json`. The app can export a translation
-template from Settings and automatically adds new English fallback keys when a
-selected translation is missing entries.
+`translations/<language-tag>/base.json`. Translations shipped beside the
+executable are read-only defaults. The app loads user translations and
+overrides from its local application-data folder, where Steam Workshop updates
+cannot replace them. Missing keys fall back to the packaged translation and
+then to built-in English.
+
+Settings can open the writable user translation folder and export a complete
+translation template there.
 
 See `translations/README-FIRST.txt` for the translation workflow.
 

@@ -74,8 +74,11 @@ underlying game data must be updated.
 
 ## Local storage and diagnostics
 
-The SQLite database, Exporter exchange files, repaired portrait cache,
+The SQLite database, Exporter exchange files, repaired portrait cache, user
 translations, and performance logs live under the Coach's local application
-data directory. Debug performance logging is disabled by default and is
-recorded across the Coach, Bridge, and Exporter only while Debug Mode is
-enabled.
+data directory. Official translations shipped beside the executable are
+read-only defaults. At runtime the Coach layers user `base.json` overrides and
+generated `mod.json` champion names over those defaults, so Steam Workshop
+updates can refresh official files without replacing user work. Debug
+performance logging is disabled by default and is recorded across the Coach,
+Bridge, and Exporter only while Debug Mode is enabled.

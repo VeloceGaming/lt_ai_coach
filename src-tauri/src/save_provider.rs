@@ -127,7 +127,7 @@ pub async fn probe_portraits_from_game(
     app: AppHandle,
     language_id: String,
 ) -> Result<PortraitProbeSummary, String> {
-    let translations_dir = crate::i18n::translations_dir(&app)?;
+    let translations_dir = crate::i18n::user_translations_dir(&app)?;
     let data_root = app
         .path()
         .app_local_data_dir()

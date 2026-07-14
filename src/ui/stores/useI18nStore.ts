@@ -1,6 +1,6 @@
 // Runtime UI language. English text lives in code (lib/i18n/strings.ts) as the
-// permanent fallback; community languages live in translations/<id>/base.json,
-// with portrait repair maintaining translations/<id>/mod.json separately.
+// permanent fallback; packaged translations are read-only defaults, while
+// user overrides and generated mod.json files live in local app data.
 // See SettingsScreen's Language row for the picker / export / open-folder UI.
 
 import { create } from "zustand";
@@ -54,7 +54,7 @@ function persistLanguage(id: string) {
 // rather than blocking the UI.
 function fetchDict(id: string): Promise<Record<string, string>> {
   if (!isTauri()) return Promise.resolve({});
-  return invoke<Record<string, string>>("load_translation", { id, fallbackEntries: Object.entries(en) }).catch(() => ({}));
+  return invoke<Record<string, string>>("load_translation", { id }).catch(() => ({}));
 }
 
 export function interpolateTranslation(template: string, values: Record<string, string | number> = {}): string {
