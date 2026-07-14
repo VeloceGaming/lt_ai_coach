@@ -2,14 +2,21 @@ import { describe, expect, it } from "vitest";
 import { analyzeComp, championTags } from "./comp";
 
 describe("analyzeComp", () => {
+  const tags = {
+    fighter: ["AD", "Tank", "CC"],
+    exorcist: ["AD", "Tank", "CC"],
+    test_mod_jhin: ["AD", "Range"],
+    test_mod_fizz: ["AP", "Magic"],
+  };
+
   it("reads game-native rawTags for base and modded champions", () => {
-    expect(championTags("fighter")).toEqual(expect.arrayContaining(["AD", "Tank", "CC"]));
-    expect(championTags("test_mod_fizz")).toEqual(expect.arrayContaining(["AP", "Magic"]));
-    expect(championTags("not_a_real_champion")).toEqual([]);
+    expect(championTags("fighter", tags)).toEqual(expect.arrayContaining(["AD", "Tank", "CC"]));
+    expect(championTags("test_mod_fizz", tags)).toEqual(expect.arrayContaining(["AP", "Magic"]));
+    expect(championTags("not_a_real_champion", tags)).toEqual([]);
   });
 
   it("counts damage types and flags an all-physical comp", () => {
-    const result = analyzeComp(["fighter", "exorcist", "test_mod_jhin"]);
+    const result = analyzeComp(["fighter", "exorcist", "test_mod_jhin"], tags);
     expect(result.physical).toBe(3);
     expect(result.magic).toBe(0);
     expect(result.counts["Tank"]).toBe(2);
@@ -19,7 +26,7 @@ describe("analyzeComp", () => {
   });
 
   it("clears the all-physical flag once a magic champion joins", () => {
-    const result = analyzeComp(["fighter", "exorcist", "test_mod_jhin", "test_mod_fizz"]);
+    const result = analyzeComp(["fighter", "exorcist", "test_mod_jhin", "test_mod_fizz"], tags);
     expect(result.magic).toBe(1);
     expect(result.gaps).not.toContain("comp.gap.allPhysical");
   });

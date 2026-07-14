@@ -17,11 +17,8 @@ pub struct DraftChampion {
     pub role_fit: BTreeMap<String, f64>,
 }
 
-pub fn load_draft_catalog(
-    database_path: &Path,
-    catalog_json: &str,
-) -> Result<DraftCatalog, String> {
-    crate::champion_registry::load_draft_catalog(database_path, catalog_json)
+pub fn load_draft_catalog(database_path: &Path) -> Result<DraftCatalog, String> {
+    crate::champion_registry::load_draft_catalog(database_path)
 }
 
 #[cfg(test)]
@@ -51,11 +48,7 @@ mod tests {
             .unwrap();
         drop(connection);
 
-        let catalog = load_draft_catalog(
-            &path,
-            r#"{"champions":[{"id":"swordman"},{"id":"archer"},{"id":"ghost"}]}"#,
-        )
-        .unwrap();
+        let catalog = load_draft_catalog(&path).unwrap();
         assert_eq!(catalog.champions.len(), 2);
         assert_eq!(catalog.champions[0].name, "Archer");
         fs::remove_file(path).unwrap();
@@ -81,11 +74,7 @@ mod tests {
             .unwrap();
         drop(connection);
 
-        let catalog = load_draft_catalog(
-            &path,
-            r#"{"champions":[{"id":"swordman"},{"id":"dual_blader"}]}"#,
-        )
-        .unwrap();
+        let catalog = load_draft_catalog(&path).unwrap();
         // dual_blader is only in picks, never in enabled_champions, but is played
         // — so it must still appear in the draft pool.
         let ids: Vec<&str> = catalog.champions.iter().map(|c| c.id.as_str()).collect();

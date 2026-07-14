@@ -153,10 +153,7 @@ pub struct ChampionPortrait {
     pub center_offset_y: i32,
 }
 
-pub fn query_role_statistics(
-    database_path: &Path,
-    catalog_json: &str,
-) -> Result<RoleStatistics, String> {
+pub fn query_role_statistics(database_path: &Path) -> Result<RoleStatistics, String> {
     if !database_path.is_file() {
         return Err("No imported database is available. Load a save first.".to_string());
     }
@@ -214,7 +211,7 @@ pub fn query_role_statistics(
     let current_patch = current_patch(&connection)?;
     let patch_changes = current_patch_changes(&connection, &current_patch)?;
 
-    let portraits = champion_portraits(catalog_json, database_path.parent())?;
+    let portraits = champion_portraits(database_path.parent())?;
     let pilot_model = crate::pilot::PilotModel::build(&connection, &current_patch)?;
     let pilot_deltas_all = pilot_model.win_rate_deltas(&connection, &current_patch, true)?;
     let pilot_deltas_role = pilot_model.win_rate_deltas(&connection, &current_patch, false)?;
@@ -758,10 +755,9 @@ pub(crate) fn patch_recency_weight_case(
 }
 
 pub(crate) fn champion_portraits(
-    catalog_json: &str,
     runtime_root: Option<&Path>,
 ) -> Result<BTreeMap<String, ChampionPortrait>, String> {
-    crate::champion_registry::resolved_catalog_portraits(catalog_json, runtime_root)
+    crate::champion_registry::resolved_catalog_portraits(runtime_root)
 }
 
 pub(crate) fn humanize_id(id: &str) -> String {
@@ -876,11 +872,7 @@ mod tests {
             .unwrap();
         drop(connection);
 
-        let result = query_role_statistics(
-            &path,
-            r#"{"champions":[{"id":"swordsman","name":"Swordsman"},{"id":"archer","name":"Archer"}]}"#,
-        )
-        .unwrap();
+        let result = query_role_statistics(&path).unwrap();
 
         assert_eq!(result.total_matches, 2);
         assert_eq!(result.current_patch, "2026.0.0");
@@ -1033,8 +1025,7 @@ mod tests {
             .unwrap()
             .join("com.lttools.lt-ai-coach")
             .join("lt-ai-coach.sqlite3");
-        let result =
-            query_role_statistics(&path, crate::CHAMPION_CATALOG).expect("database should query");
+        let result = query_role_statistics(&path).expect("database should query");
 
         assert_eq!(
             result.role_rows.iter().map(|row| row.games).sum::<usize>(),

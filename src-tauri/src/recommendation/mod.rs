@@ -2940,9 +2940,8 @@ mod tests {
             .unwrap()
             .join("com.lttools.lt-ai-coach")
             .join("lt-ai-coach.sqlite3");
-        let catalog = crate::draft::load_draft_catalog(&path, crate::CHAMPION_CATALOG).unwrap();
-        let statistics =
-            crate::statistics::query_role_statistics(&path, crate::CHAMPION_CATALOG).unwrap();
+        let catalog = crate::draft::load_draft_catalog(&path).unwrap();
+        let statistics = crate::statistics::query_role_statistics(&path).unwrap();
         let interactions = crate::interactions::query_interactions(&path).unwrap();
         let request = RecommendationRequest {
             mode: "normal".to_string(),
@@ -3053,9 +3052,8 @@ mod tests {
             .unwrap()
             .join("com.lttools.lt-ai-coach")
             .join("lt-ai-coach.sqlite3");
-        let catalog = crate::draft::load_draft_catalog(&path, crate::CHAMPION_CATALOG).unwrap();
-        let statistics =
-            crate::statistics::query_role_statistics(&path, crate::CHAMPION_CATALOG).unwrap();
+        let catalog = crate::draft::load_draft_catalog(&path).unwrap();
+        let statistics = crate::statistics::query_role_statistics(&path).unwrap();
         let request = |picks: Vec<&str>| RecommendationRequest {
             mode: "normal".to_string(),
             side: "blue".to_string(),
@@ -3113,12 +3111,11 @@ mod tests {
             .join("lt-ai-coach.sqlite3");
 
         let started = Instant::now();
-        let catalog = crate::draft::load_draft_catalog(&path, crate::CHAMPION_CATALOG).unwrap();
+        let catalog = crate::draft::load_draft_catalog(&path).unwrap();
         let catalog_elapsed = started.elapsed();
 
         let started = Instant::now();
-        let statistics =
-            crate::statistics::query_role_statistics(&path, crate::CHAMPION_CATALOG).unwrap();
+        let statistics = crate::statistics::query_role_statistics(&path).unwrap();
         let statistics_elapsed = started.elapsed();
 
         let started = Instant::now();

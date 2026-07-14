@@ -1,35 +1,20 @@
 # Asset Sources
 
-This prototype contains local, game-derived and Workshop-derived files for
-development and personal use.
+This project contains game-derived base champion portraits. It does not bundle
+Workshop champion artwork or third-party champion metadata catalogs.
 
-## Save Probe
+## Champion Metadata
 
-Source installation:
+The LT AI Coach Exporter reads each enabled champion from the user's loaded
+game and writes `champion_metadata.json`. Its champion IDs, categories, and raw
+tags come from the game database, including locally installed Workshop
+champions. The exporter derives LT AI Coach's role prior from those fields with
+a small, documented heuristic in its source. Actual match-role evidence
+continuously replaces that eight-game prior in the Coach.
 
-`Steam\steamapps\workshop\content\3009300\3738242091`
+No champion metadata from Meta Dashboard is shipped with this repository.
 
-Bundled file:
-
-`tools/tfm2_save_probe.exe`
-
-SHA-256:
-
-`6110D093772B733D2B041A266C963CDEEA6C2EED2C26571430DE9454DD417315`
-
-The probe is treated as an external provider. Redistribution rights have not
-been established. Replace it with an independently implemented parser before
-public distribution unless permission is obtained.
-
-## Champion Assets and Catalog
-
-Base and mod champion sprite sheets were copied from the locally installed
-Meta Dashboard output. The Eagle development asset came from this workspace's
-example mod.
-
-`data/catalog/champions.json` is a reduced export of champion metadata already
-produced by the locally installed dashboard. It intentionally excludes match
-statistics, team data, player data, and save-specific performance results.
+## Champion Portraits
 
 `data/catalog/portraits.json` is independently generated from the locally
 installed game's `bundle.game_data` by `scripts/build-portrait-catalog.py`. It
@@ -38,12 +23,8 @@ the game's `style/champion_view` face/center offsets. Run
 `npm run catalog:portraits` to reproduce it. This catalog does not use the Meta
 Dashboard-derived portrait metadata above.
 
-`data/catalog/mod-portraits.json` and `assets/generated/mod-portraits/` are
-generated from locally installed Workshop champion `.aseprite` resources using
-TFM2 Forge's game-compatible conversion semantics. Run
-`npm run catalog:mod-portraits` to reproduce them. The generator defaults to the
-four locally configured Workshop champion mods and accepts repeatable `--mod`
-arguments for other mod directories.
+Workshop champion portraits are not bundled. The portrait repair command asks
+the Exporter to read them from the user's own game installation and stores the
+result in the runtime `generated/mod-portraits/` cache.
 
-Game-derived artwork and data remain subject to the game's applicable rights.
-Do not assume the prototype asset bundle can be redistributed publicly.
+Game-derived artwork remains subject to the game's applicable rights.

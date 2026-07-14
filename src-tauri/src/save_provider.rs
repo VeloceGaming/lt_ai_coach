@@ -32,6 +32,7 @@ const PORTRAIT_REQUEST_FILE: &str = "portrait_request.txt";
 const EXPORT_FILES: &[&str] = &[
     "manifest.tsv",
     "champions.tsv",
+    "champion_metadata.json",
     "players.tsv",
     "teams.tsv",
     "champion_balance_history.json",

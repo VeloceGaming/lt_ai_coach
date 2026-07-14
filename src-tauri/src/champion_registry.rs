@@ -13,19 +13,6 @@ use std::{
 };
 
 #[derive(Deserialize)]
-struct Catalog {
-    champions: Vec<CatalogChampion>,
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct CatalogChampion {
-    id: String,
-    #[serde(default)]
-    role_fit: BTreeMap<String, f64>,
-}
-
-#[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct PortraitCatalog {
     portraits: BTreeMap<String, PortraitEntry>,
@@ -75,17 +62,14 @@ pub struct ChampionOverrides {
     pub portraits: BTreeMap<String, String>,
 }
 
-pub fn load_draft_catalog(
-    database_path: &Path,
-    catalog_json: &str,
-) -> Result<DraftCatalog, String> {
+pub fn load_draft_catalog(database_path: &Path) -> Result<DraftCatalog, String> {
     if !database_path.is_file() {
         return Err("No imported database is available. Load a save first.".to_string());
     }
 
     let connection = Connection::open(database_path)
         .map_err(|error| format!("Could not open draft database: {error}"))?;
-    let catalog = catalog_metadata(catalog_json, database_path.parent())?;
+    let catalog = catalog_metadata(Some(database_path), database_path.parent())?;
     let ids = runtime_champion_ids(&connection)?;
     let overrides = database_path
         .parent()
@@ -98,11 +82,11 @@ pub fn load_draft_catalog(
 }
 
 pub fn bridge_champions(
-    catalog_json: &str,
+    database_path: Option<&Path>,
     overrides_root: Option<&Path>,
     ids: impl IntoIterator<Item = String>,
 ) -> Vec<DraftChampion> {
-    let catalog = catalog_metadata(catalog_json, overrides_root).unwrap_or_default();
+    let catalog = catalog_metadata(database_path, overrides_root).unwrap_or_default();
     let overrides = overrides_root
         .and_then(|root| load_overrides(root).ok())
         .unwrap_or_default();
@@ -146,7 +130,8 @@ pub fn save_override(
     fs::write(overrides_path(root), text)
         .map_err(|error| format!("Could not write champion overrides: {error}"))?;
 
-    let catalog = catalog_metadata(crate::CHAMPION_CATALOG, Some(root)).unwrap_or_default();
+    let database_path = root.join("lt-ai-coach.sqlite3");
+    let catalog = catalog_metadata(Some(&database_path), Some(root)).unwrap_or_default();
     champions_for_ids(
         BTreeSet::from([champion_id.to_string()]),
         &catalog,
@@ -205,67 +190,38 @@ fn runtime_champion_ids(connection: &Connection) -> Result<BTreeSet<String>, Str
 }
 
 fn catalog_metadata(
-    catalog_json: &str,
+    database_path: Option<&Path>,
     runtime_root: Option<&Path>,
 ) -> Result<BTreeMap<String, CatalogMetadata>, String> {
-    let catalog: Catalog = serde_json::from_str(catalog_json).map_err(|error| error.to_string())?;
-    let mut metadata: BTreeMap<String, CatalogMetadata> = catalog
-        .champions
-        .into_iter()
-        .map(|champion| {
-            (
-                champion.id,
-                CatalogMetadata {
-                    portrait: None,
-                    role_fit: champion.role_fit,
-                },
+    let mut metadata = database_metadata(database_path)?;
+    let overlays: PortraitCatalog =
+        serde_json::from_str(crate::BASE_PORTRAIT_CATALOG).map_err(|error| error.to_string())?;
+    for (id, overlay) in overlays.portraits {
+        let Some(frame) = overlay.frame else { continue };
+        let current = metadata.entry(id).or_default();
+        let Some(path) = overlay.sheet.map(|path| {
+            format!(
+                "/{}",
+                path.strip_prefix("assets/")
+                    .unwrap_or(&path)
+                    .replace('\\', "/")
             )
-        })
-        .collect();
-    for source in [crate::BASE_PORTRAIT_CATALOG, crate::MOD_PORTRAIT_CATALOG] {
-        let overlays: PortraitCatalog =
-            serde_json::from_str(source).map_err(|error| error.to_string())?;
-        for (id, overlay) in overlays.portraits {
-            let Some(frame) = overlay.frame else { continue };
-            let current = metadata.entry(id).or_default();
-            let path = overlay
-                .sheet
-                .map(|path| {
-                    format!(
-                        "/{}",
-                        path.strip_prefix("assets/")
-                            .unwrap_or(&path)
-                            .replace('\\', "/")
-                    )
-                })
-                .or_else(|| {
-                    current
-                        .portrait
-                        .as_ref()
-                        .map(|portrait| portrait.path.clone())
-                });
-            let Some(path) = path else { continue };
-            let existing = current.portrait.as_ref();
-            current.portrait = Some(ChampionPortrait {
-                path,
-                sheet_width: overlay
-                    .sheet_width
-                    .or_else(|| existing.map(|p| p.sheet_width))
-                    .unwrap_or(0),
-                sheet_height: overlay
-                    .sheet_height
-                    .or_else(|| existing.map(|p| p.sheet_height))
-                    .unwrap_or(0),
-                x: frame.x as usize,
-                y: frame.y as usize,
-                width: frame.width as usize,
-                height: frame.height as usize,
-                face_offset_x: overlay.face_offset.x,
-                face_offset_y: overlay.face_offset.y,
-                center_offset_x: overlay.center_offset.x,
-                center_offset_y: overlay.center_offset.y,
-            });
-        }
+        }) else {
+            continue;
+        };
+        current.portrait = Some(ChampionPortrait {
+            path,
+            sheet_width: overlay.sheet_width.unwrap_or(0),
+            sheet_height: overlay.sheet_height.unwrap_or(0),
+            x: frame.x as usize,
+            y: frame.y as usize,
+            width: frame.width as usize,
+            height: frame.height as usize,
+            face_offset_x: overlay.face_offset.x,
+            face_offset_y: overlay.face_offset.y,
+            center_offset_x: overlay.center_offset.x,
+            center_offset_y: overlay.center_offset.y,
+        });
     }
     if runtime_root.is_some() {
         for (id, portrait) in runtime_portraits()? {
@@ -273,6 +229,69 @@ fn catalog_metadata(
         }
     }
     Ok(metadata)
+}
+
+fn database_metadata(
+    database_path: Option<&Path>,
+) -> Result<BTreeMap<String, CatalogMetadata>, String> {
+    let Some(database_path) = database_path.filter(|path| path.is_file()) else {
+        return Ok(BTreeMap::new());
+    };
+    let connection = Connection::open(database_path)
+        .map_err(|error| format!("Could not open champion metadata database: {error}"))?;
+    let mut statement = match connection
+        .prepare("SELECT champion_id, role_fit_json FROM champion_metadata ORDER BY champion_id")
+    {
+        Ok(statement) => statement,
+        Err(_) => return Ok(BTreeMap::new()),
+    };
+    let rows = statement
+        .query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })
+        .map_err(|error| format!("Could not query champion metadata: {error}"))?;
+    let mut metadata = BTreeMap::new();
+    for row in rows {
+        let (id, role_fit_json) =
+            row.map_err(|error| format!("Could not read champion metadata: {error}"))?;
+        let role_fit = serde_json::from_str(&role_fit_json).unwrap_or_default();
+        metadata.insert(
+            id,
+            CatalogMetadata {
+                portrait: None,
+                role_fit,
+            },
+        );
+    }
+    Ok(metadata)
+}
+
+pub fn imported_champion_tags(
+    database_path: &Path,
+) -> Result<BTreeMap<String, Vec<String>>, String> {
+    if !database_path.is_file() {
+        return Ok(BTreeMap::new());
+    }
+    let connection = Connection::open(database_path)
+        .map_err(|error| format!("Could not open champion metadata database: {error}"))?;
+    let mut statement = match connection
+        .prepare("SELECT champion_id, raw_tags_json FROM champion_metadata ORDER BY champion_id")
+    {
+        Ok(statement) => statement,
+        Err(_) => return Ok(BTreeMap::new()),
+    };
+    let rows = statement
+        .query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })
+        .map_err(|error| format!("Could not query champion tags: {error}"))?;
+    let mut tags = BTreeMap::new();
+    for row in rows {
+        let (id, raw_tags_json) =
+            row.map_err(|error| format!("Could not read champion tags: {error}"))?;
+        tags.insert(id, serde_json::from_str(&raw_tags_json).unwrap_or_default());
+    }
+    Ok(tags)
 }
 
 // Root of the bundled `assets/` tree used to resolve manual override portraits
@@ -286,10 +305,9 @@ fn default_assets_root() -> PathBuf {
 }
 
 pub(crate) fn resolved_catalog_portraits(
-    catalog_json: &str,
     runtime_root: Option<&Path>,
 ) -> Result<BTreeMap<String, ChampionPortrait>, String> {
-    Ok(catalog_metadata(catalog_json, runtime_root)?
+    Ok(catalog_metadata(None, runtime_root)?
         .into_iter()
         .filter_map(|(id, metadata)| metadata.portrait.map(|portrait| (id, portrait)))
         .collect())
@@ -435,22 +453,23 @@ mod tests {
     }
 
     #[test]
-    fn generated_catalog_crop_is_authoritative() {
+    fn base_portrait_and_imported_role_fit_are_combined() {
         let path = temp_database("registry-crop");
         let connection = Connection::open(&path).unwrap();
         connection
             .execute_batch(
                 "CREATE TABLE enabled_champions (champion_id TEXT PRIMARY KEY);
-                 INSERT INTO enabled_champions VALUES ('wind_mage');",
+                 INSERT INTO enabled_champions VALUES ('wind_mage');
+                 CREATE TABLE champion_metadata (
+                    champion_id TEXT PRIMARY KEY,
+                    role_fit_json TEXT NOT NULL
+                 );
+                 INSERT INTO champion_metadata VALUES ('wind_mage', '{\"mid\":100}');",
             )
             .unwrap();
         drop(connection);
 
-        let catalog = load_draft_catalog(
-            &path,
-            r#"{"champions":[{"id":"wind_mage","roleFit":{"mid":100},"asset":{"sheet":"assets/champions/wind_mage.png","sheetWidth":1846,"sheetHeight":78,"frame":{"x":26,"y":0,"w":23,"h":61}}}]}"#,
-        )
-        .unwrap();
+        let catalog = load_draft_catalog(&path).unwrap();
         let wind = catalog
             .champions
             .iter()
@@ -477,11 +496,7 @@ mod tests {
             .unwrap();
         drop(connection);
 
-        let catalog = load_draft_catalog(
-            &path,
-            r#"{"champions":[{"id":"swordman"},{"id":"wind_mage"}]}"#,
-        )
-        .unwrap();
+        let catalog = load_draft_catalog(&path).unwrap();
         let ids = catalog
             .champions
             .iter()

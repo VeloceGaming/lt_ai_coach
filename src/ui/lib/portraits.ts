@@ -1,40 +1,15 @@
-// Auto-discovers champion sprites that aren't in the bundled catalog. Modded (and
-// base) champions keep their art as `<id>.png` in the served sprite folders, so for
-// any champion the backend hands us with no portrait we probe those folders by id.
+// Auto-discovers base champion sprites that aren't in the bundled portrait catalog.
+// Mod champion portraits are gathered from the user's own game installation by the
+// exporter repair flow and must not fall back to bundled third-party mod artwork.
 // The sheets are horizontal strips of square frames (frame side = sheet height), so
 // we crop the first frame. Results are cached, and missing files resolve to null.
 
 import type { ChampionPortrait } from "../types";
-import championCatalog from "../../../data/catalog/champions.json";
 
 // Served from Vite's publicDir ("assets"), so these map to /<folder>/<id>.png.
-const SPRITE_FOLDERS = ["mod-champions", "champions"];
+const SPRITE_FOLDERS = ["champions"];
 
 const cache = new Map<string, Promise<ChampionPortrait | null>>();
-const catalogPortraits = new Map(
-  (championCatalog.champions as Array<{
-    id: string;
-    asset?: {
-      sheet: string;
-      sheetWidth: number;
-      sheetHeight: number;
-      frame: { x: number; y: number; w: number; h: number };
-    };
-  }>)
-    .filter((champion) => champion.asset)
-    .map((champion) => {
-      const asset = champion.asset!;
-      return [champion.id, {
-        path: `/${asset.sheet.replace(/^assets[\\/]/, "").replaceAll("\\", "/")}`,
-        sheetWidth: asset.sheetWidth,
-        sheetHeight: asset.sheetHeight,
-        x: asset.frame.x,
-        y: asset.frame.y,
-        width: asset.frame.w,
-        height: asset.frame.h,
-      } satisfies ChampionPortrait] as const;
-    }),
-);
 
 function loadImageSize(src: string): Promise<{ width: number; height: number } | null> {
   return new Promise((resolve) => {
@@ -46,8 +21,6 @@ function loadImageSize(src: string): Promise<{ width: number; height: number } |
 }
 
 async function resolveOne(championId: string): Promise<ChampionPortrait | null> {
-  const catalogPortrait = catalogPortraits.get(championId);
-  if (catalogPortrait) return catalogPortrait;
   for (const folder of SPRITE_FOLDERS) {
     const path = `/${folder}/${championId}.png`;
     const size = await loadImageSize(path);

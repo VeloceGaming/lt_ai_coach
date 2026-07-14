@@ -22,9 +22,7 @@ mod recommendation;
 mod save_provider;
 mod statistics;
 
-const CHAMPION_CATALOG: &str = include_str!("../../data/catalog/champions.json");
 pub(crate) const BASE_PORTRAIT_CATALOG: &str = include_str!("../../data/catalog/portraits.json");
-pub(crate) const MOD_PORTRAIT_CATALOG: &str = include_str!("../../data/catalog/mod-portraits.json");
 
 /// Folder where repaired mod-champion portraits are cached at runtime:
 /// `generated/mod-portraits` next to the LT AI Coach executable. Keeping the
@@ -114,11 +112,8 @@ fn load_recommendation_data(database_path: &Path) -> Result<CachedRecommendation
         ));
     }
 
-    let catalog = Arc::new(draft::load_draft_catalog(database_path, CHAMPION_CATALOG)?);
-    let statistics = Arc::new(statistics::query_role_statistics(
-        database_path,
-        CHAMPION_CATALOG,
-    )?);
+    let catalog = Arc::new(draft::load_draft_catalog(database_path)?);
+    let statistics = Arc::new(statistics::query_role_statistics(database_path)?);
     let interactions = Arc::new(interactions::query_interactions(database_path)?);
     let manual_tiers = Arc::new(manual_tiers::query_manual_tiers(database_path)?);
     let athletes = Arc::new(athletes::load_athlete_index(database_path)?);
@@ -189,25 +184,24 @@ fn default_bans_per_side() -> usize {
     3
 }
 
-#[derive(serde::Deserialize)]
-struct ChampionCatalog {
-    champions: Vec<serde_json::Value>,
-}
-
 #[tauri::command]
 fn get_app_status(app: tauri::AppHandle) -> Result<AppStatus, String> {
-    let catalog: ChampionCatalog =
-        serde_json::from_str(CHAMPION_CATALOG).map_err(|error| error.to_string())?;
-    let database_ready = app
+    let database_path = app
         .path()
         .app_local_data_dir()
-        .map(|path| path.join("lt-ai-coach.sqlite3").is_file())
-        .unwrap_or(false);
+        .map_err(|error| format!("Could not resolve application data directory: {error}"))?
+        .join("lt-ai-coach.sqlite3");
+    let database_ready = database_path.is_file();
+    let catalog_champions = if database_ready {
+        database::query_enabled_champion_count(&database_path).unwrap_or_default()
+    } else {
+        0
+    };
 
     Ok(AppStatus {
         backend: "Tauri 2 + Rust",
         phase: "Patch-aware local coach",
-        catalog_champions: catalog.champions.len(),
+        catalog_champions,
         database_ready,
     })
 }
@@ -254,11 +248,9 @@ async fn get_role_statistics(app: tauri::AppHandle) -> Result<statistics::RoleSt
         .app_local_data_dir()
         .map_err(|error| format!("Could not resolve application data directory: {error}"))?
         .join("lt-ai-coach.sqlite3");
-    tauri::async_runtime::spawn_blocking(move || {
-        statistics::query_role_statistics(&database_path, CHAMPION_CATALOG)
-    })
-    .await
-    .map_err(|error| format!("Statistics task failed: {error}"))?
+    tauri::async_runtime::spawn_blocking(move || statistics::query_role_statistics(&database_path))
+        .await
+        .map_err(|error| format!("Statistics task failed: {error}"))?
 }
 
 #[tauri::command]
@@ -282,11 +274,9 @@ async fn get_draft_catalog(app: tauri::AppHandle) -> Result<draft::DraftCatalog,
         .app_local_data_dir()
         .map_err(|error| format!("Could not resolve application data directory: {error}"))?
         .join("lt-ai-coach.sqlite3");
-    tauri::async_runtime::spawn_blocking(move || {
-        draft::load_draft_catalog(&database_path, CHAMPION_CATALOG)
-    })
-    .await
-    .map_err(|error| format!("Draft catalog task failed: {error}"))?
+    tauri::async_runtime::spawn_blocking(move || draft::load_draft_catalog(&database_path))
+        .await
+        .map_err(|error| format!("Draft catalog task failed: {error}"))?
 }
 
 #[tauri::command]
@@ -596,19 +586,33 @@ fn get_draft_bridge(
         .cloned()
         .collect::<std::collections::BTreeSet<_>>();
     let overrides_root = app.path().app_local_data_dir().ok();
-    snapshot.champions =
-        champion_registry::bridge_champions(CHAMPION_CATALOG, overrides_root.as_deref(), ids);
+    let database_path = overrides_root
+        .as_ref()
+        .map(|root| root.join("lt-ai-coach.sqlite3"));
+    snapshot.champions = champion_registry::bridge_champions(
+        database_path.as_deref(),
+        overrides_root.as_deref(),
+        ids,
+    );
     snapshot
 }
 
-// Champion id -> game-native tags, as sent live by the bridge mod (empty until a
-// LTAC2TAGS packet arrives). The frontend prefers these over the bundled catalog
-// for comp analysis, so modded champions get tags with no re-export.
+// Champion id -> game-native tags. Imported exporter metadata provides the
+// offline baseline; fresh live Bridge tags replace entries without rewriting
+// the user's imported database.
 #[tauri::command]
 fn get_champion_tags(
+    app: tauri::AppHandle,
     bridge: tauri::State<'_, draft_bridge::DraftBridge>,
-) -> std::collections::BTreeMap<String, Vec<String>> {
-    bridge.champion_tags()
+) -> Result<std::collections::BTreeMap<String, Vec<String>>, String> {
+    let database_path = app
+        .path()
+        .app_local_data_dir()
+        .map_err(|error| format!("Could not resolve application data directory: {error}"))?
+        .join("lt-ai-coach.sqlite3");
+    let mut tags = champion_registry::imported_champion_tags(&database_path)?;
+    tags.extend(bridge.champion_tags());
+    Ok(tags)
 }
 
 #[tauri::command]
@@ -694,13 +698,6 @@ pub fn run() {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn app_status_reports_embedded_catalog() {
-        let catalog: ChampionCatalog =
-            serde_json::from_str(CHAMPION_CATALOG).expect("catalog should deserialize");
-        assert_eq!(catalog.champions.len(), 72);
-    }
 
     #[test]
     #[ignore = "profiles the recommendation data cache against the live database"]

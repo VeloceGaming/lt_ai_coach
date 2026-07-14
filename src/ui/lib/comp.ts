@@ -1,15 +1,8 @@
 // Composition analysis from the game-native champion rawTags (AD/AP/Tank/CC/
 // Shield/Magic/Heal/Range/Dot/Melee). Display-only: it summarizes YOUR drafted
 // side and flags gaps; it does NOT feed the recommendation engine. Tags come from
-// the bundled catalog (covers base + exported mods); champions with no catalog
-// entry simply don't contribute. A future "live tags from the mod" path would
-// swap the lookup source without changing this logic.
-
-import championCatalog from "../../../data/catalog/champions.json";
-
-const TAG_LOOKUP = new Map<string, string[]>(
-  (championCatalog.champions as Array<{ id: string; rawTags?: string[] }>).map((champion) => [champion.id, champion.rawTags ?? []]),
-);
+// imported exporter metadata, with fresher live Bridge values overriding it.
+// Champions without tag metadata simply do not contribute.
 
 export type CompAnalysis = {
   pickCount: number;
@@ -21,13 +14,11 @@ export type CompAnalysis = {
   gaps: string[];
 };
 
-// Live tags (from the bridge mod) win over the bundled catalog so modded
-// champions get tags with no re-export; the catalog is the offline fallback.
 export type LiveTags = Record<string, string[]>;
 
-/** Look up a champion's game-native tags: live first, then bundled catalog. */
+/** Look up a champion's imported/live game-native tags. */
 export function championTags(championId: string, liveTags?: LiveTags): string[] {
-  return liveTags?.[championId] ?? TAG_LOOKUP.get(championId) ?? [];
+  return liveTags?.[championId] ?? [];
 }
 
 export function analyzeComp(championIds: string[], liveTags?: LiveTags): CompAnalysis {

@@ -67,6 +67,26 @@ struct PickRow {
     rating: Option<i64>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ExporterChampionMetadata {
+    schema_version: usize,
+    #[serde(default)]
+    champions: Vec<ExporterChampionMetadataRow>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ExporterChampionMetadataRow {
+    id: String,
+    #[serde(default)]
+    category: String,
+    #[serde(default)]
+    raw_tags: Vec<String>,
+    #[serde(default)]
+    role_fit: BTreeMap<String, f64>,
+}
+
 // ---------------------------------------------------------------------------
 // Exporter import (new path): read the lt_ai_coach_exporter mod's output instead
 // of running the borrowed probe. The mod reads the live game Database through the
@@ -267,6 +287,15 @@ pub fn import_exporter_output(
         .filter(|line| !line.is_empty())
         .map(str::to_string)
         .collect();
+    let champion_metadata: ExporterChampionMetadata =
+        serde_json::from_str(&read_required(exporter_dir, "champion_metadata.json")?)
+            .map_err(|error| format!("Could not parse champion_metadata.json: {error}"))?;
+    if champion_metadata.schema_version != 1 {
+        return Err(format!(
+            "Unsupported champion metadata schema {}. Update LT AI Coach and its Exporter together.",
+            champion_metadata.schema_version
+        ));
+    }
     let players = parse_id_name_tsv(&read_required(exporter_dir, "players.tsv")?);
     let teams = parse_id_name_tsv(&read_required(exporter_dir, "teams.tsv")?);
     let athlete_export = read_athlete_export(exporter_dir)?;
@@ -333,7 +362,7 @@ pub fn import_exporter_output(
         .execute(
             "INSERT INTO import_metadata
              (id, schema_version, save_path, game_time, probe_output_path, player_team_id, imported_at)
-             VALUES (1, 8, ?1, ?2, ?3, ?4, datetime('now'))",
+             VALUES (1, 9, ?1, ?2, ?3, ?4, datetime('now'))",
             params![
                 exporter_dir.to_string_lossy(),
                 game_time,
@@ -398,6 +427,23 @@ pub fn import_exporter_output(
                 [champion_id],
             )
             .map_err(|error| format!("Could not write enabled champion: {error}"))?;
+    }
+    for champion in &champion_metadata.champions {
+        if champion.id.trim().is_empty() {
+            continue;
+        }
+        let raw_tags = serde_json::to_string(&champion.raw_tags)
+            .map_err(|error| format!("Could not serialize champion tags: {error}"))?;
+        let role_fit = serde_json::to_string(&champion.role_fit)
+            .map_err(|error| format!("Could not serialize champion role fit: {error}"))?;
+        transaction
+            .execute(
+                "INSERT INTO champion_metadata
+                 (champion_id, category, raw_tags_json, role_fit_json)
+                 VALUES (?1, ?2, ?3, ?4)",
+                params![champion.id, champion.category, raw_tags, role_fit],
+            )
+            .map_err(|error| format!("Could not write champion metadata: {error}"))?;
     }
     let athlete_team_ids = athlete_export
         .as_ref()
@@ -850,6 +896,12 @@ fn create_schema(connection: &Connection) -> Result<(), String> {
             CREATE TABLE IF NOT EXISTS enabled_champions (
                 champion_id TEXT PRIMARY KEY
             );
+            CREATE TABLE IF NOT EXISTS champion_metadata (
+                champion_id TEXT PRIMARY KEY,
+                category TEXT NOT NULL,
+                raw_tags_json TEXT NOT NULL,
+                role_fit_json TEXT NOT NULL
+            );
             CREATE TABLE IF NOT EXISTS patch_changed_champions (
                 patch TEXT NOT NULL,
                 champion_id TEXT NOT NULL,
@@ -994,6 +1046,17 @@ pub fn query_player_team_id(database_path: &Path) -> Result<Option<usize>, Strin
         .transpose()
 }
 
+pub fn query_enabled_champion_count(database_path: &Path) -> Result<usize, String> {
+    if !database_path.is_file() {
+        return Ok(0);
+    }
+    let connection = Connection::open(database_path)
+        .map_err(|error| format!("Could not open champion database: {error}"))?;
+    connection
+        .query_row("SELECT COUNT(*) FROM enabled_champions", [], |row| row.get(0))
+        .map_err(|error| format!("Could not count enabled champions: {error}"))
+}
+
 fn ensure_column(
     connection: &Connection,
     table: &str,
@@ -1028,6 +1091,7 @@ fn clear_current_data(transaction: &Transaction<'_>) -> Result<(), String> {
             DELETE FROM picks;
             DELETE FROM matches;
             DELETE FROM enabled_champions;
+            DELETE FROM champion_metadata;
             DELETE FROM patch_changed_champions;
             DELETE FROM champion_patch_changes;
             DELETE FROM champion_patch_additions;

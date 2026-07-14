@@ -19,14 +19,11 @@ export function ChampionPortraitView({ portrait, width = 40, height = 40, scaleM
   const className = `champion-portrait${fixedCenter ? " fixed-center" : ""}`;
   if (!portrait) return <span className={`${className} missing`} style={frameStyle} aria-hidden="true" />;
   const scale = portraitScale(portrait, width, height, scaleMode);
-  if (fixedCenter) {
-    const cropWidth = `${portrait.width * scale}px`;
-    const cropHeight = `${portrait.height * scale}px`;
-    return <span className={className} style={frameStyle} aria-hidden="true">
-      <span className="champion-portrait-frame image-crop" style={{ width: cropWidth, minWidth: cropWidth, maxWidth: cropWidth, height: cropHeight, minHeight: cropHeight, maxHeight: cropHeight }}>
-        <img src={portrait.path} alt="" draggable={false} style={{ left: `${-portrait.x * scale}px`, top: `${-portrait.y * scale}px`, width: `${portrait.sheetWidth * scale}px`, height: `${portrait.sheetHeight * scale}px` }} />
-      </span>
-    </span>;
-  }
-  return <span className={className} style={frameStyle} aria-hidden="true"><span className="champion-portrait-frame" style={{ backgroundImage: `url("${portrait.path}")`, backgroundPosition: `${-portrait.x * scale}px ${-portrait.y * scale}px`, backgroundSize: `${portrait.sheetWidth * scale}px ${portrait.sheetHeight * scale}px`, width: `${portrait.width * scale}px`, height: `${portrait.height * scale}px` }} /></span>;
+  const cropWidth = `${portrait.width * scale}px`;
+  const cropHeight = `${portrait.height * scale}px`;
+  return <span className={className} style={frameStyle} aria-hidden="true">
+    <span className="champion-portrait-frame image-crop" style={{ position: fixedCenter ? undefined : "relative", width: cropWidth, minWidth: cropWidth, maxWidth: cropWidth, height: cropHeight, minHeight: cropHeight, maxHeight: cropHeight }}>
+      <img src={portrait.path} alt="" draggable={false} style={{ left: `${-portrait.x * scale}px`, top: `${-portrait.y * scale}px`, width: `${portrait.sheetWidth * scale}px`, height: `${portrait.sheetHeight * scale}px` }} />
+    </span>
+  </span>;
 }
