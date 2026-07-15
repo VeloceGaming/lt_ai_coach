@@ -2,10 +2,18 @@
 """Build base champion portrait metadata directly from TFM2 bundle.game_data."""
 
 import argparse
+from io import BytesIO
 import json
 import os
 import struct
 from pathlib import Path
+
+try:
+    from PIL import Image
+except ImportError as error:
+    raise SystemExit(
+        "Portrait catalog generation requires Pillow: python -m pip install Pillow"
+    ) from error
 
 CHAMPION_PREFIX = "asset/base/aseprite_resources/champions/"
 CHAMPION_VIEW_PATH = "asset/base/style/champion_view"
@@ -58,6 +66,36 @@ def first_portrait_frame(payload: bytes):
         "width": frame["w"],
         "height": frame["h"],
     }
+
+
+def visible_portrait_frame(sheet_payload: bytes, frame: dict):
+    coordinates = [frame[key] for key in ("x", "y", "width", "height")]
+    if any(not isinstance(value, (int, float)) or int(value) != value for value in coordinates):
+        return None
+    x, y, width, height = map(int, coordinates)
+    if x < 0 or y < 0 or width <= 0 or height <= 0:
+        return None
+    try:
+        with Image.open(BytesIO(sheet_payload)) as sheet:
+            rgba = sheet.convert("RGBA")
+    except (OSError, ValueError):
+        return None
+    if x + width > rgba.width or y + height > rgba.height:
+        return None
+    alpha_bounds = rgba.crop((x, y, x + width, y + height)).getchannel("A").getbbox()
+    if alpha_bounds is None:
+        return None
+    left, top, right, bottom = alpha_bounds
+    visible = dict(frame)
+    visible.update(
+        {
+            "x": x + left,
+            "y": y + top,
+            "width": right - left,
+            "height": bottom - top,
+        }
+    )
+    return visible
 
 
 def default_bundle():
@@ -115,6 +153,12 @@ def build(bundle: Path, assets_output: Path):
             missing.append("sheet")
         if not frame:
             missing.append("frame")
+        elif sheet:
+            visible_frame = visible_portrait_frame(sheet[1], frame)
+            if visible_frame:
+                frame = visible_frame
+            else:
+                missing.append("visiblePixels")
         if sprite not in view_entries:
             missing.append("viewOffsets")
         if missing:
@@ -135,7 +179,7 @@ def build(bundle: Path, assets_output: Path):
     return {
         "schemaVersion": 1,
         "generatedFrom": "Teamfight Manager 2 bundle.game_data",
-        "selectionRule": "idle.frames[0], otherwise first non-empty animation frame",
+        "selectionRule": "visible alpha bounds of idle.frames[0], otherwise first non-empty animation frame",
         "portraits": portraits,
         "warnings": warnings,
     }

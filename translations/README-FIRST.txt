@@ -133,9 +133,9 @@ screen will report the filename and JSON error so it can be corrected.
 
 Translators normally do not need to create or edit mod.json.
 
-When the user selects a language and clicks "Repair missing portraits", the app
-reads translated champion names supplied by enabled mods and regenerates only
-the following file under local application data:
+When the user selects a language (including English) and clicks "Repair missing
+portraits", the app reads champion names supplied by enabled mods and
+regenerates only the following file under local application data:
 
   translations/<current-language>/mod.json
 

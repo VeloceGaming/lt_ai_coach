@@ -192,9 +192,6 @@ fn cache_mod_champion_names(
     language_id: &str,
 ) -> Result<(), String> {
     let language_id = crate::i18n::canonical_language_id(language_id);
-    if language_id.eq_ignore_ascii_case("en") {
-        return Ok(());
-    }
     let mut translations: BTreeMap<String, String> = BTreeMap::new();
     for entry in champions.iter().filter(|entry| {
         !entry
@@ -288,7 +285,7 @@ fn cache_repaired_portrait(
             "Portrait frame for {champion_id} is outside its sheet."
         ));
     }
-    let cropped = sheet.crop_imm(x, y, width, height);
+    let cropped = trim_transparent_portrait_padding(sheet.crop_imm(x, y, width, height));
     let mut png = Vec::new();
     cropped
         .write_to(&mut Cursor::new(&mut png), image::ImageFormat::Png)
@@ -302,6 +299,35 @@ fn cache_repaired_portrait(
     fs::write(&target, png)
         .map_err(|error| format!("Could not cache repaired portrait for {champion_id}: {error}"))?;
     Ok(true)
+}
+
+fn trim_transparent_portrait_padding(image: image::DynamicImage) -> image::DynamicImage {
+    let (width, height) = (image.width(), image.height());
+    let rgba = image.to_rgba8();
+    let mut min_x = width;
+    let mut min_y = height;
+    let mut max_y = 0;
+    let mut max_x = 0;
+    let mut has_visible_pixel = false;
+    for (x, y, pixel) in rgba.enumerate_pixels() {
+        if pixel[3] == 0 {
+            continue;
+        }
+        has_visible_pixel = true;
+        min_x = min_x.min(x);
+        min_y = min_y.min(y);
+        max_x = max_x.max(x);
+        max_y = max_y.max(y);
+    }
+    if !has_visible_pixel {
+        return image;
+    }
+    let visible_width = max_x - min_x + 1;
+    let visible_height = max_y - min_y + 1;
+    if min_x == 0 && min_y == 0 && visible_width == width && visible_height == height {
+        return image;
+    }
+    image.crop_imm(min_x, min_y, visible_width, visible_height)
 }
 
 #[cfg(test)]
@@ -343,6 +369,24 @@ mod tests {
     }
 
     #[test]
+    fn transparent_padding_is_trimmed_to_visible_sprite_bounds() {
+        let mut image = RgbaImage::new(79, 147);
+        for y in 53..83 {
+            for x in 25..58 {
+                image.put_pixel(x, y, Rgba([20, 40, 60, 255]));
+            }
+        }
+
+        let normalized =
+            trim_transparent_portrait_padding(image::DynamicImage::ImageRgba8(image));
+
+        assert_eq!((normalized.width(), normalized.height()), (33, 30));
+        let normalized = normalized.to_rgba8();
+        assert_eq!(normalized.get_pixel(0, 0)[3], 255);
+        assert_eq!(normalized.get_pixel(32, 29)[3], 255);
+    }
+
+    #[test]
     fn mod_names_are_written_only_for_the_requested_language() {
         let root = std::env::temp_dir().join(format!(
             "lt-ai-coach-mod-i18n-{}",
@@ -360,17 +404,16 @@ mod tests {
 
         cache_mod_champion_names(&root, &champions, "zh-TW").unwrap();
 
-        let value: serde_json::Value = serde_json::from_str(
-            &fs::read_to_string(root.join("zh-hant/mod.json")).unwrap(),
-        )
-        .unwrap();
+        let value: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(root.join("zh-hant/mod.json")).unwrap())
+                .unwrap();
         assert_eq!(value["champion.harpy"], "鷹身女妖");
         assert!(value.get("en").is_none());
         fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
-    fn english_mod_names_are_not_written() {
+    fn english_mod_names_are_written() {
         let root = std::env::temp_dir().join(format!(
             "lt-ai-coach-english-mod-i18n-{}",
             SystemTime::now()
@@ -387,8 +430,10 @@ mod tests {
 
         cache_mod_champion_names(&root, &champions, "en").unwrap();
 
-        assert!(!root.join("en/mod.json").exists());
-        assert!(!root.exists());
+        let value: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(root.join("en/mod.json")).unwrap()).unwrap();
+        assert_eq!(value["champion.harpy"], "Harpy");
+        fs::remove_dir_all(root).unwrap();
     }
 }
 

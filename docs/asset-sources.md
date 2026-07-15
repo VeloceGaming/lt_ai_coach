@@ -19,9 +19,10 @@ No champion metadata from Meta Dashboard is shipped with this repository.
 `data/catalog/portraits.json` is independently generated from the locally
 installed game's `bundle.game_data` by `scripts/build-portrait-catalog.py`. It
 reads each champion `#sheet.png`, the first `idle` frame in `#anim.fanim`, and
-the game's `style/champion_view` face/center offsets. Run
-`npm run catalog:portraits` to reproduce it. This catalog does not use the Meta
-Dashboard-derived portrait metadata above.
+the game's `style/champion_view` face/center offsets, then normalizes the frame
+to its visible alpha bounds. Install Pillow and run `npm run catalog:portraits`
+to reproduce it. This catalog does not use the Meta Dashboard-derived portrait
+metadata above.
 
 Workshop champion portraits are not bundled. The portrait repair command asks
 the Exporter to read them from the user's own game installation and stores the

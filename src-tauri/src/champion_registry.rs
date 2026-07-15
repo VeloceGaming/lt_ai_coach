@@ -476,8 +476,10 @@ mod tests {
             .find(|champion| champion.id == "wind_mage")
             .unwrap();
         let portrait = wind.portrait.as_ref().unwrap();
-        assert_eq!(portrait.x, 26);
-        assert_eq!(portrait.width, 23);
+        assert_eq!(portrait.x, 27);
+        assert_eq!(portrait.y, 1);
+        assert_eq!(portrait.width, 20);
+        assert_eq!(portrait.height, 38);
         assert_eq!(wind.role_fit.get("mid"), Some(&100.0));
         fs::remove_file(path).unwrap();
     }

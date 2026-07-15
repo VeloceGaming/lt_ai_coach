@@ -118,8 +118,8 @@ export function initI18n() {
 // "English" champion name to fall back to (the default is whatever the
 // backend already resolved: a user override, the catalog name, or a
 // humanized id). A translation file only overrides the name when it defines
-// `champion.<id>`; otherwise the existing default passes through untouched,
-// so English/no-translation behavior never changes.
+// `champion.<id>` (including generated English mod names); otherwise the
+// existing default passes through untouched.
 export function useChampionName() {
   const dict = useI18nStore((s) => s.dict);
   return (id: string, fallback: string) => dict[`champion.${id}`] ?? fallback;
