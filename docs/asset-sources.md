@@ -28,4 +28,28 @@ Workshop champion portraits are not bundled. The portrait repair command asks
 the Exporter to read them from the user's own game installation and stores the
 result in the runtime `generated/mod-portraits/` cache.
 
+## Implementation Lessons
+
+- The animation metadata is authoritative. Resolve the portrait from the
+  champion's exact `#sheet.png` and the first `idle` frame in `#anim.fanim`;
+  do not guess a crop or special-case champions such as Kog'Maw.
+- Apply the same frame-extraction and visible-alpha normalization to bundled
+  base champions and repaired Workshop champions. Sprite sheets often contain
+  transparent padding, so displaying the raw frame rectangle can make an
+  otherwise correct sprite look too small or vertically off-center.
+- Center the normalized visible image in the UI and retain only meaningful
+  game-provided `champion_view` offsets. Avoid per-champion visual patches and
+  global CSS nudges that merely compensate for transparent source padding.
+- Workshop repair must not scan or accept arbitrary filesystem paths. The
+  Exporter only reads exact resource filenames and directories registered for
+  the loaded mod by the game SDK, then validates path containment, file size,
+  PNG signatures, and FANIM JSON before returning data to the Coach.
+- Champion display names are localization data, not stable IDs. Repair writes
+  generated `<language>/mod.json` entries from the loaded game's champion
+  translations, including `en/mod.json`, so English does not fall back to a
+  raw internal mod name such as `test mod Azir`.
+- Keep the generated base catalog deterministic and verify that every emitted
+  portrait is tightly alpha-bounded. This catches pipeline regressions across
+  the whole roster instead of relying on a few visually inspected champions.
+
 Game-derived artwork remains subject to the game's applicable rights.

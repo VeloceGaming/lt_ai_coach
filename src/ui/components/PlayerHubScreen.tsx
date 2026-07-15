@@ -240,12 +240,6 @@ function PlayerDetail({
   }, [champions, detail.masteries, masteryQuery]);
 
   useEffect(() => {
-    if (!detail.masteries.some((mastery) => mastery.championId === selectedChampion)) {
-      setSelectedChampion(detail.masteries.find((mastery) => mastery.mastery >= 60)?.championId ?? null);
-    }
-  }, [detail.id, detail.masteries, selectedChampion, setSelectedChampion]);
-
-  useEffect(() => {
     let active = true;
     const missing = detail.masteries
       .map((mastery) => mastery.championId)
@@ -257,8 +251,8 @@ function PlayerDetail({
   }, [catalogChampions, detail.id, detail.masteries]);
 
   useEffect(() => {
+    setLookup(null);
     if (!selectedChampion) {
-      setLookup(null);
       return;
     }
     let active = true;
@@ -270,9 +264,10 @@ function PlayerDetail({
 
   const selectedMastery = detail.masteries.find((mastery) => mastery.championId === selectedChampion) ?? null;
   const selectedChampionRecord = selectedChampion ? champions.get(selectedChampion) : undefined;
+  const activeLookup = lookup?.athleteId === detail.id && lookup.championId === selectedChampion ? lookup : null;
   const coreNote = selectedMastery && selectedChampionRecord
     ? `${selectedChampionRecord.name} · ${selectedMastery.statBuff > 0 ? `+${Math.round(selectedMastery.statBuff * 100)}%` : t("playerHub.noBuff")}`
-    : t("playerHub.masteryAffectedFallback");
+    : undefined;
 
   return <div className="player-detail">
     <div className="player-profile-column">
@@ -291,7 +286,7 @@ function PlayerDetail({
     {!detail.stats && <div className="player-data-warning">{t("playerHub.baseStatsUnavailable")}</div>}
 
     {detail.stats && <div className="player-stat-groups">
-      <StatGroup title={t("playerHub.coreMechanicsTitle")} note={coreNote} values={detail.stats.core} effectiveValues={lookup?.effectiveCore} labels={coreLabels} accent />
+      <StatGroup title={t("playerHub.coreMechanicsTitle")} note={coreNote} values={detail.stats.core} effectiveValues={activeLookup?.effectiveCore} labels={coreLabels} accent />
       <StatGroup title={t("playerHub.tendenciesTitle")} note={t("playerHub.unaffected")} values={detail.stats.tendencies} labels={tendencyLabels} />
       <RoleStatGroup values={detail.stats.roles} />
     </div>}
@@ -307,7 +302,7 @@ function PlayerDetail({
         <div className="mastery-groups" key={detail.id}>
           {masteryGroups.map(([label, masteries]) => <section className={`mastery-band mastery-band-${label.replace("+", "")}`} key={label}>
             <header><strong>{label}</strong><span>{masteries.length}</span></header>
-            <div className="mastery-grid">{masteries.map((mastery) => <MasteryTile key={mastery.championId} mastery={mastery} champion={champions.get(mastery.championId)} selected={selectedChampion === mastery.championId} onSelect={() => setSelectedChampion(mastery.championId)} />)}</div>
+            <div className="mastery-grid">{masteries.map((mastery) => <MasteryTile key={mastery.championId} mastery={mastery} champion={champions.get(mastery.championId)} selected={selectedChampion === mastery.championId} onSelect={() => setSelectedChampion(selectedChampion === mastery.championId ? null : mastery.championId)} />)}</div>
           </section>)}
           {masteryGroups.length === 0 && <div className="mastery-empty">{t("playerHub.noMasteryChampions")}</div>}
         </div>
@@ -325,7 +320,7 @@ function StatGroup<T extends Record<string, number>>({
   accent = false,
 }: {
   title: string;
-  note: string;
+  note?: string;
   values: T;
   effectiveValues?: Partial<Record<keyof T, number>>;
   labels: Array<[keyof T, string]>;
@@ -333,7 +328,7 @@ function StatGroup<T extends Record<string, number>>({
 }) {
   const t = useT();
   return <section className={`player-stat-group${accent ? " accent" : ""}`}>
-    <header><h3>{title}</h3><span>{note}</span></header>
+    <header><h3>{title}</h3>{note && <span>{note}</span>}</header>
     <div>{labels.map(([key, label]) => {
       const base = values[key];
       const effective = effectiveValues?.[key];

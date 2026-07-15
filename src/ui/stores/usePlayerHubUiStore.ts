@@ -30,7 +30,9 @@ export const usePlayerHubUiStore = create<PlayerHubUiState>((set) => ({
   setQuery: (query) => set({ query }),
   setTeam: (team) => set({ team }),
   setContract: (contract) => set({ contract }),
-  setSelectedId: (selectedId) => set({ selectedId }),
+  setSelectedId: (selectedId) => set((state) => state.selectedId === selectedId
+    ? state
+    : { selectedId, selectedChampion: null }),
   setMasteryQuery: (masteryQuery) => set({ masteryQuery }),
   initializeDefaultTeam: (team) => set((state) => state.defaultTeamInitialized
     ? state

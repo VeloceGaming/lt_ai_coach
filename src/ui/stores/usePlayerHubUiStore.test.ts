@@ -14,6 +14,18 @@ describe("usePlayerHubUiStore", () => {
     expect(usePlayerHubUiStore.getState()).toMatchObject({ selectedId: 13, selectedChampion: "swordman" });
   });
 
+  it("clears the champion selection when the selected player changes", () => {
+    usePlayerHubUiStore.setState({ selectedId: 13, selectedChampion: "swordman" });
+    usePlayerHubUiStore.getState().setSelectedId(21);
+    expect(usePlayerHubUiStore.getState()).toMatchObject({ selectedId: 21, selectedChampion: null });
+  });
+
+  it("keeps the champion selection when the same player is selected again", () => {
+    usePlayerHubUiStore.setState({ selectedId: 13, selectedChampion: "swordman" });
+    usePlayerHubUiStore.getState().setSelectedId(13);
+    expect(usePlayerHubUiStore.getState()).toMatchObject({ selectedId: 13, selectedChampion: "swordman" });
+  });
+
   it("initializes the imported player team only once per session", () => {
     usePlayerHubUiStore.getState().initializeDefaultTeam("Northstar");
     expect(usePlayerHubUiStore.getState()).toMatchObject({ team: "Northstar", defaultTeamInitialized: true });
