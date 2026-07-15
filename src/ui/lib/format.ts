@@ -8,7 +8,7 @@ export function formatAge(seconds: number) {
   return `${Math.round(seconds / 3600)} h`;
 }
 
-export function scoringWeightLabel(key: keyof ScoringWeights) { return { performance: "Performance", synergy: "Ally synergy", matchup: "Enemy matchup", flexibility: "Flexibility", draftOrder: "Draft stage", draftPresence: "Draft presence" }[key]; }
+export function scoringWeightLabel(key: keyof ScoringWeights) { return { performance: "Performance", synergy: "Ally synergy", matchup: "Enemy matchup", flexibility: "Flexibility", draftPresence: "Draft presence" }[key]; }
 
 export function formatPercent(value: number) { return `${(value * 100).toFixed(1)}%`; }
 export function formatNumber(value: number | null, digits: number) { return value === null ? "N/A" : value.toFixed(digits); }

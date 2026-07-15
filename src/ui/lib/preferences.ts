@@ -7,7 +7,6 @@ export const defaultScoringWeights: ScoringWeights = {
   synergy: 20,
   matchup: 15,
   flexibility: 10,
-  draftOrder: 5,
   draftPresence: 10,
 };
 
@@ -126,7 +125,6 @@ function validateScoringWeights(value: unknown): ScoringWeights {
     synergy: validNumber(candidate.synergy, 0, 100) ? candidate.synergy : defaultScoringWeights.synergy,
     matchup: validNumber(candidate.matchup, 0, 100) ? candidate.matchup : defaultScoringWeights.matchup,
     flexibility: validNumber(candidate.flexibility, 0, 100) ? candidate.flexibility : defaultScoringWeights.flexibility,
-    draftOrder: validNumber(candidate.draftOrder, 0, 100) ? candidate.draftOrder : defaultScoringWeights.draftOrder,
     draftPresence: validNumber(candidate.draftPresence, 0, 100) ? candidate.draftPresence : defaultScoringWeights.draftPresence,
   };
 }

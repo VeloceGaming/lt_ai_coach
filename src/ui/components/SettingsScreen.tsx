@@ -55,7 +55,6 @@ const SCORING_KEYS: Record<keyof ScoringWeights, string> = {
   synergy: "settings.scoring.synergy",
   matchup: "settings.scoring.matchup",
   flexibility: "settings.scoring.flexibility",
-  draftOrder: "settings.scoring.draftOrder",
   draftPresence: "settings.scoring.draftPresence",
 };
 
@@ -111,6 +110,9 @@ export function SettingsScreen() {
   const effective = resolveMode(mode);
   const currentAccent = accent || DEFAULT_ACCENT;
   const activeTuningValues = activeTuning(strategy, customTuning);
+  // The engine normalizes the scoring weights over their sum, so the slider
+  // number is not a literal percentage. Show the real share next to each one.
+  const weightTotal = Object.values(weights).reduce((sum, value) => sum + value, 0);
   const activeStrategyKey = STRATEGIES.find((s) => s.id === strategy)?.key;
 
   return <div className="settings-screen">
@@ -301,7 +303,7 @@ export function SettingsScreen() {
           <span className="range-control">
             <input type="range" min="0" max="100" step="5" value={weights[key]} onChange={(e) => setWeight(key, Number(e.target.value))} />
             <span className="range-endpoints" aria-hidden="true"><small>0</small><small>100</small></span>
-            <output>{weights[key]}</output>
+            <output>{weights[key]} {t("settings.scoring.effectiveShare", { percent: weightTotal > 0 ? Math.round((weights[key] / weightTotal) * 100) : 0 })}</output>
           </span>
         </div>
       ))}

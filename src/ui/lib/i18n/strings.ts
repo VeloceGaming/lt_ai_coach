@@ -352,6 +352,7 @@ export const en: Record<string, string> = {
   "recommendation.reason.currentPicksSynergy": "{side}'s current picks change its expected synergy by {delta}% (up to {games} role-pair games)",
   "recommendation.reason.expectedMatchup": "Expected matchup into {side}'s current picks is {delta}% (up to {games} role-pair games)",
   "recommendation.reason.denyBlueFirstPick": "High-value Blue first pick; denying it is valuable",
+  "recommendation.reason.ownClaimOverlap": "Also one of your own strongest picks; banning it would waste your claim",
   // The {label} phrase inside blueClaimWithLeftover — sent by the engine as a
   // translation key, not as literal text, so it renders in the active language.
   "recommendation.survival.likelyBanTarget": "a likely Red ban target",
@@ -462,6 +463,7 @@ export const en: Record<string, string> = {
   "settings.debugMode.logsDesc": "Open the folder containing the shareable performance.jsonl file.",
   "settings.debugMode.openLogs": "Open logs folder",
   "settings.scoring.desc": "How the final score blends each dimension. Independent of the strategy preset above.",
+  "settings.scoring.effectiveShare": "(= {percent}% of score)",
   "settings.scoring.performance.label": "Performance",
   "settings.scoring.performance.desc": "Historical win rate and rating strength for the role, adjusted for the current patch.",
   "settings.scoring.synergy.label": "Ally synergy",
@@ -470,8 +472,6 @@ export const en: Record<string, string> = {
   "settings.scoring.matchup.desc": "How favorably this champion fares against the enemy picks so far.",
   "settings.scoring.flexibility.label": "Flexibility",
   "settings.scoring.flexibility.desc": "How many roles this champion can credibly fill, useful for staying uncommitted early.",
-  "settings.scoring.draftOrder.label": "Draft stage",
-  "settings.scoring.draftOrder.desc": "How much the current pick order matters — rewards flexible picks early and strong matchups once the enemy has locked champions.",
   "settings.scoring.draftPresence.label": "Draft presence",
   "settings.scoring.draftPresence.desc": "How often this champion is picked or banned in current drafts.",
 

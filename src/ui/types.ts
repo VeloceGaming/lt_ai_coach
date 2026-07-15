@@ -278,7 +278,6 @@ export type ScoringWeights = {
   synergy: number;
   matchup: number;
   flexibility: number;
-  draftOrder: number;
   draftPresence: number;
 };
 

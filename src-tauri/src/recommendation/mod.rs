@@ -134,7 +134,6 @@ pub struct ScoringWeights {
     pub synergy: f64,
     pub matchup: f64,
     pub flexibility: f64,
-    pub draft_order: f64,
     #[serde(default)]
     pub draft_presence: f64,
 }
@@ -146,7 +145,6 @@ impl Default for ScoringWeights {
             synergy: 20.0,
             matchup: 15.0,
             flexibility: 10.0,
-            draft_order: 5.0,
             draft_presence: 10.0,
         }
     }
@@ -646,6 +644,15 @@ fn build_shortlist_internal(
         .map(|recommendation| (recommendation.champion_id.as_str(), recommendation.score))
         .collect::<BTreeMap<_, _>>();
     let first_pick = first_pick_context(request, first_pick_candidates);
+    // The current side's own pick value per champion, so ban scoring can
+    // discount candidates this side actually plans to pick. For Blue this
+    // mirrors `pick_scores`; for Red it is Red's own view (while `pick_scores`
+    // deliberately holds Blue's first-pick values for denial reasoning).
+    let own_pick_scores = picks
+        .iter()
+        .map(|recommendation| (recommendation.champion_id.as_str(), recommendation.score))
+        .collect::<BTreeMap<_, _>>();
+    let own_first_pick = first_pick_context(request, &picks);
     let red_bans_remaining = request
         .bans_per_side
         .clamp(1, 5)
@@ -732,6 +739,10 @@ fn build_shortlist_internal(
             &opposing_perspective,
             pick_score,
             &first_pick,
+            // No-recursion approximation: the opposing side's own pick plans
+            // are not modeled here, so its own-claim inputs stay neutral.
+            None,
+            &FirstPickContext::default(),
             &statistics.draft_presence,
             0.0,
             None,
@@ -792,6 +803,8 @@ fn build_shortlist_internal(
             request,
             pick_score,
             &first_pick,
+            own_pick_scores.get(champion_id).copied(),
+            &own_first_pick,
             &statistics.draft_presence,
             portfolio_adjustment,
             portfolio_claim,
@@ -1367,15 +1380,7 @@ fn score_pick(
     // Wider multiplier than synergy: matchup data is sparser and clusters near
     // 50%, so a 3x scale left the dimension nearly flat even at high weight.
     let matchup_value = (0.5 + interaction.matchup_delta * 5.0).clamp(0.0, 1.0);
-    let candidate_role_confidence = projected_role
-        .map(|(_, probability, _)| probability)
-        .unwrap_or(0.0);
     let blind_pick = enemy_picks.is_empty();
-    let draft_order_value = if blind_pick {
-        (0.6 * flexibility_value + 0.4 * (1.0 - candidate_role_confidence)).clamp(0.0, 1.0)
-    } else {
-        (0.5 + interaction.matchup_delta * 4.0).clamp(0.0, 1.0)
-    };
     // How contested this champion is in drafts (pick/ban frequency), as its own
     // tunable dimension so it never inflates the pure win-rate strength.
     let draft_presence_value = draft_presence.get(&champion.id).copied().unwrap_or(0.5);
@@ -1385,7 +1390,6 @@ fn score_pick(
             + weights.synergy * synergy_value
             + weights.matchup * matchup_value
             + weights.flexibility * flexibility_value
-            + weights.draft_order * draft_order_value
             + weights.draft_presence * draft_presence_value);
     let collision = role_collision_penalty(champion, roles, candidate_model, covered_roles, own_picks);
     let collision_penalty = collision.penalty;
@@ -1611,6 +1615,8 @@ fn score_ban(
     request: &RecommendationRequest,
     pick_score: Option<f64>,
     first_pick: &FirstPickContext,
+    own_pick_score: Option<f64>,
+    own_claim: &FirstPickContext,
     draft_presence: &BTreeMap<String, f64>,
     portfolio_adjustment: f64,
     portfolio_claim: Option<(String, String)>,
@@ -1624,9 +1630,31 @@ fn score_ban(
         .filter(|row| row.games >= 5)
         .max_by(|left, right| left.adjusted_win_rate.total_cmp(&right.adjusted_win_rate))
         .copied();
+    // Sample depth enters the threat read exactly once, through the same
+    // risk-adjusted win rate the pick side uses: a thin sample is pulled toward
+    // neutral instead of being rewarded again by a standalone confidence term
+    // (which favored heavily-played champions regardless of strength) and a
+    // confidence-multiplied peak (which made an unproven 55% role read like a
+    // catastrophic ~27% one).
+    let t = &request.tuning;
+    let overall_risk_wr = risk_adjusted_win_rate(
+        overall.adjusted_win_rate,
+        overall.wins,
+        overall.games,
+        t.win_rate_risk_z,
+        t.win_rate_prior_games,
+    );
     let peak = best_role
-        .map(|row| row.adjusted_win_rate * row.confidence)
-        .unwrap_or(overall.adjusted_win_rate * overall.confidence);
+        .map(|row| {
+            risk_adjusted_win_rate(
+                row.adjusted_win_rate,
+                row.wins,
+                row.games,
+                t.win_rate_risk_z,
+                t.win_rate_prior_games,
+            )
+        })
+        .unwrap_or(overall_risk_wr);
     let rating_value = best_role
         .map(|row| rating_strength(row.avg_rating, row.games, rating_baselines.get(&row.role)))
         .unwrap_or(0.5);
@@ -1638,12 +1666,10 @@ fn score_ban(
         .map(ManualTier::performance_shift)
         .unwrap_or(0.0);
     // A champion that performs above par (rating) is a bigger threat to leave open.
-    let t = &request.tuning;
     let threat_score = 100.0
-        * (0.46 * overall.adjusted_win_rate
-            + 0.18 * rating_value
-            + 0.20 * overall.confidence
-            + 0.16 * peak
+        * (0.55 * overall_risk_wr
+            + 0.20 * rating_value
+            + 0.25 * peak
             + flexibility_bonus
             + crate::patch::patch_performance_shift(
                 overall,
@@ -1681,7 +1707,7 @@ fn score_ban(
     let own_claim_discount = if request.side == "blue" {
         own_claim_discount(pick_score, first_pick)
     } else {
-        0.0
+        red_own_claim_discount(own_pick_score, own_claim, pick_score, first_pick)
     };
     let base_score = threat_score
         + counterability_adjustment
@@ -1786,6 +1812,11 @@ fn score_ban(
         reasons.push(Reason::positive(
             "High-value Blue first pick; denying it is valuable",
         ).translated("recommendation.reason.denyBlueFirstPick", [] as [(&str, String); 0]));
+    }
+    if own_claim_discount >= 3.0 {
+        reasons.push(Reason::negative(
+            "Also one of your own strongest picks; banning it would waste your claim",
+        ).translated("recommendation.reason.ownClaimOverlap", [] as [(&str, String); 0]));
     }
     if portfolio_adjustment >= PORTFOLIO_ADJUSTMENT_REASON_THRESHOLD {
         let label = portfolio_leftover_survival.map(survival_label);
@@ -2146,6 +2177,10 @@ fn build_portfolio_pool(
             &red_perspective,
             Some(blue_pick_value),
             first_pick,
+            // Portfolio evaluation deliberately keeps Red's own-claim inputs
+            // neutral (same no-recursion rule as the other portfolio terms).
+            None,
+            &FirstPickContext::default(),
             draft_presence,
             0.0,
             None,
@@ -2309,22 +2344,42 @@ fn is_protected_blue_first_pick(
     })
 }
 
-// A Blue ban candidate that is also close to Blue's own best pick score is
-// probably the champion Blue plans to take, so its ban value is discounted —
-// banning your own likely pick wastes a ban. The discount fades for
-// champions further from Blue's best pick score, since those are less likely
-// to be Blue's actual claim and retain full denial value.
-fn own_claim_discount(pick_score: Option<f64>, context: &FirstPickContext) -> f64 {
+// How close a pick score sits to the top of an acceptable-pick pool, 0..1.
+// 1 means "this is (tied for) the pool's best pick", 0 means "outside the
+// pool entirely" or "no pool to compare against".
+fn claim_closeness(pick_score: Option<f64>, context: &FirstPickContext) -> f64 {
     let Some(pick_score) = pick_score else {
         return 0.0;
     };
     if context.pool_size == 0 {
         return 0.0;
     }
-    let closeness = ((pick_score - (context.best_score - FIRST_PICK_POOL_DELTA))
-        / FIRST_PICK_POOL_DELTA)
-        .clamp(0.0, 1.0);
-    closeness * OWN_CLAIM_DISCOUNT_WEIGHT
+    ((pick_score - (context.best_score - FIRST_PICK_POOL_DELTA)) / FIRST_PICK_POOL_DELTA)
+        .clamp(0.0, 1.0)
+}
+
+// A ban candidate that is also close to this side's own best pick score is
+// probably a champion this side plans to take, so its ban value is discounted —
+// banning your own likely pick wastes a ban. The discount fades for
+// champions further from the side's best pick score, since those are less
+// likely to be its actual claim and retain full denial value.
+fn own_claim_discount(pick_score: Option<f64>, context: &FirstPickContext) -> f64 {
+    claim_closeness(pick_score, context) * OWN_CLAIM_DISCOUNT_WEIGHT
+}
+
+// Red's version of the own-claim discount. Red also wastes a ban by removing
+// a champion it wants for itself, but only to the degree Blue wouldn't simply
+// claim it first: Blue picks before Red, so a champion Blue also rates highly
+// is lost to Red either way — banning it then is denial (already valued by
+// `first_pick_denial_adjustment`), not waste.
+fn red_own_claim_discount(
+    own_pick_score: Option<f64>,
+    own_context: &FirstPickContext,
+    blue_pick_score: Option<f64>,
+    blue_context: &FirstPickContext,
+) -> f64 {
+    own_claim_discount(own_pick_score, own_context)
+        * (1.0 - claim_closeness(blue_pick_score, blue_context))
 }
 
 // If the OPPOSING side would also rank this candidate near its own best ban
@@ -2448,7 +2503,6 @@ fn normalized_weights(weights: &ScoringWeights) -> ScoringWeights {
         + weights.synergy.max(0.0)
         + weights.matchup.max(0.0)
         + weights.flexibility.max(0.0)
-        + weights.draft_order.max(0.0)
         + weights.draft_presence.max(0.0);
     if total <= f64::EPSILON {
         return ScoringWeights::default();
@@ -2458,7 +2512,6 @@ fn normalized_weights(weights: &ScoringWeights) -> ScoringWeights {
         synergy: weights.synergy.max(0.0) / total,
         matchup: weights.matchup.max(0.0) / total,
         flexibility: weights.flexibility.max(0.0) / total,
-        draft_order: weights.draft_order.max(0.0) / total,
         draft_presence: weights.draft_presence.max(0.0) / total,
     }
 }
@@ -2839,6 +2892,40 @@ mod tests {
             red_ban_score: red_ban,
             red_pick_value: red_pick,
         }
+    }
+
+    #[test]
+    fn red_own_claim_discount_fades_with_blue_interest() {
+        let own = FirstPickContext {
+            best_score: 100.0,
+            pool_size: 3,
+        };
+        let blue = FirstPickContext {
+            best_score: 100.0,
+            pool_size: 3,
+        };
+        // Red's top pick that Blue has no interest in: full discount — banning
+        // it would only waste Red's own claim.
+        assert_eq!(
+            red_own_claim_discount(Some(100.0), &own, None, &blue),
+            OWN_CLAIM_DISCOUNT_WEIGHT
+        );
+        // Blue also rates it as its own best pick: Blue claims it first either
+        // way, so banning it is pure denial and the discount vanishes.
+        assert_eq!(
+            red_own_claim_discount(Some(100.0), &own, Some(100.0), &blue),
+            0.0
+        );
+        // Partial Blue interest scales the discount down proportionally.
+        let partial = red_own_claim_discount(
+            Some(100.0),
+            &own,
+            Some(100.0 - FIRST_PICK_POOL_DELTA / 2.0),
+            &blue,
+        );
+        assert!((partial - OWN_CLAIM_DISCOUNT_WEIGHT * 0.5).abs() < 1e-9);
+        // A champion Red has no pick interest in is never discounted.
+        assert_eq!(red_own_claim_discount(None, &own, None, &blue), 0.0);
     }
 
     #[test]
