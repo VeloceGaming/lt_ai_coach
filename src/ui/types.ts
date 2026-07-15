@@ -226,6 +226,10 @@ export type Reason = {
   translationChampionIds?: Record<string, string>;
   /** Placeholder name -> raw role id, resolved through role.* translations. */
   translationRoleIds?: Record<string, string>;
+  /** Placeholder name -> translation key, for placeholders whose value is a
+   * phrase chosen by the engine rather than a number or a name. Resolved
+   * through the active language so the phrase isn't pasted in as English. */
+  translationKeys?: Record<string, string>;
 };
 
 export type Recommendation = {

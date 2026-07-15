@@ -238,6 +238,12 @@ pub struct Reason {
     pub translation_champion_ids: BTreeMap<String, String>,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub translation_role_ids: BTreeMap<String, String>,
+    /// Placeholder name -> translation key, for a placeholder whose value is a
+    /// phrase the engine chose rather than a number or a name. Without this the
+    /// phrase would travel as a literal and be pasted into a translated sentence
+    /// still in English.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub translation_keys: BTreeMap<String, String>,
 }
 
 impl Reason {
@@ -258,6 +264,7 @@ impl Reason {
             translation_values: BTreeMap::new(),
             translation_champion_ids: BTreeMap::new(),
             translation_role_ids: BTreeMap::new(),
+            translation_keys: BTreeMap::new(),
         }
     }
     fn translated<I, K, V>(mut self, key: &str, values: I) -> Self
@@ -294,6 +301,18 @@ impl Reason {
         self.translation_role_ids = roles
             .into_iter()
             .map(|(placeholder, role_id)| (placeholder.into(), role_id.into()))
+            .collect();
+        self
+    }
+    fn translated_phrases<I, K, V>(mut self, phrases: I) -> Self
+    where
+        I: IntoIterator<Item = (K, V)>,
+        K: Into<String>,
+        V: Into<String>,
+    {
+        self.translation_keys = phrases
+            .into_iter()
+            .map(|(placeholder, key)| (placeholder.into(), key.into()))
             .collect();
         self
     }
@@ -1771,7 +1790,7 @@ fn score_ban(
     if portfolio_adjustment >= PORTFOLIO_ADJUSTMENT_REASON_THRESHOLD {
         let label = portfolio_leftover_survival.map(survival_label);
         match (portfolio_claim, portfolio_leftover, label) {
-            (Some((claim_id, claim)), Some((leftover_id, leftover)), Some(label)) => reasons.push(Reason::neutral(format!(
+            (Some((claim_id, claim)), Some((leftover_id, leftover)), Some((label, label_key))) => reasons.push(Reason::neutral(format!(
                 "Blue can only claim one strong open pick; banning this leaves {claim} as Blue's likely survivor while {leftover} remains {label}"
             )).translated("recommendation.reason.blueClaimWithLeftover", [
                 ("claim", claim.to_string()),
@@ -1780,7 +1799,7 @@ fn score_ban(
             ]).translated_champions([
                 ("claim", claim_id),
                 ("leftover", leftover_id),
-            ])),
+            ]).translated_phrases([("label", label_key)])),
             (Some((claim_id, claim)), _, _) => reasons.push(Reason::neutral(format!(
                 "Blue can only claim one strong open pick; banning this leaves {claim} as Blue's likely survivor"
             )).translated("recommendation.reason.blueClaim", [("claim", claim.to_string())])
@@ -1878,13 +1897,25 @@ fn survival_factor(value: f64, pool_scores: &[f64]) -> f64 {
 
 // Qualitative framing of a survival factor for the UI. Never presented as a
 // calibrated probability — it's a relative read on Red's ban ranking only.
-fn survival_label(factor: f64) -> &'static str {
+// Returns (English text, translation key): the text backs the untranslated
+// `Reason::text` fallback while the key lets the UI render the phrase in the
+// active language. One function returns both so they cannot drift apart.
+fn survival_label(factor: f64) -> (&'static str, &'static str) {
     if factor <= 0.45 {
-        "a likely Red ban target"
+        (
+            "a likely Red ban target",
+            "recommendation.survival.likelyBanTarget",
+        )
     } else if factor < 0.75 {
-        "at moderate contest risk from Red"
+        (
+            "at moderate contest risk from Red",
+            "recommendation.survival.moderateRisk",
+        )
     } else {
-        "likely to survive Red's next ban"
+        (
+            "likely to survive Red's next ban",
+            "recommendation.survival.likelySurvive",
+        )
     }
 }
 
@@ -2963,15 +2994,24 @@ mod tests {
     fn survival_label_is_qualitative_not_a_percentage() {
         assert_eq!(
             survival_label(SURVIVAL_FACTOR_MIN),
-            "a likely Red ban target"
+            (
+                "a likely Red ban target",
+                "recommendation.survival.likelyBanTarget"
+            )
         );
         assert_eq!(
             survival_label(RED_PRESSURE_BASELINE),
-            "at moderate contest risk from Red"
+            (
+                "at moderate contest risk from Red",
+                "recommendation.survival.moderateRisk"
+            )
         );
         assert_eq!(
             survival_label(SURVIVAL_FACTOR_MAX),
-            "likely to survive Red's next ban"
+            (
+                "likely to survive Red's next ban",
+                "recommendation.survival.likelySurvive"
+            )
         );
     }
 

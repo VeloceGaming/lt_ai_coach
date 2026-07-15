@@ -19,6 +19,34 @@ type Props = {
   iconSize?: number;
 };
 
+// Resolves a reason's placeholders into display values for the active language.
+// Plain translationValues pass through as-is (numbers, percentages, counts);
+// champion ids, role ids, and phrase keys are each looked up. Exported so the
+// lookup rules can be tested without rendering.
+export function resolveReasonValues(
+  reason: Reason,
+  t: (key: string) => string,
+  championName: (id: string, fallback: string) => string,
+): Record<string, string> {
+  const values: Record<string, string> = { ...reason.translationValues };
+  for (const [placeholder, championId] of Object.entries(reason.translationChampionIds ?? {})) {
+    values[placeholder] = championName(championId, values[placeholder] ?? championId);
+  }
+  for (const [placeholder, rawRole] of Object.entries(reason.translationRoleIds ?? {})) {
+    const role = rawRole === "bottom" ? "bot" : rawRole;
+    const key = `role.${role}`;
+    const translated = t(key);
+    values[placeholder] = translated === key ? (values[placeholder] ?? rawRole) : translated;
+  }
+  for (const [placeholder, key] of Object.entries(reason.translationKeys ?? {})) {
+    const translated = t(key);
+    // t() echoes the key back when it resolves to nothing; keep the engine's
+    // literal English in that case rather than showing the raw key.
+    values[placeholder] = translated === key ? (values[placeholder] ?? key) : translated;
+  }
+  return values;
+}
+
 export function ReasonList({ reasons, className, limit = 4, iconSize = 13 }: Props) {
   const t = useT();
   const championName = useChampionName();
@@ -26,16 +54,7 @@ export function ReasonList({ reasons, className, limit = 4, iconSize = 13 }: Pro
     <ul className={className}>
       {reasons.slice(0, limit).map((reason, index) => {
         const Icon = TONE_ICON[reason.tone] ?? IconMinus;
-        const values = { ...reason.translationValues };
-        for (const [placeholder, championId] of Object.entries(reason.translationChampionIds ?? {})) {
-          values[placeholder] = championName(championId, values[placeholder] ?? championId);
-        }
-        for (const [placeholder, rawRole] of Object.entries(reason.translationRoleIds ?? {})) {
-          const role = rawRole === "bottom" ? "bot" : rawRole;
-          const key = `role.${role}`;
-          const translated = t(key);
-          values[placeholder] = translated === key ? (values[placeholder] ?? rawRole) : translated;
-        }
+        const values = resolveReasonValues(reason, t, championName);
         return (
           <li key={index} className={`reason reason-${reason.tone}`}>
             <Icon size={iconSize} stroke={2.4} />

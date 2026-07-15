@@ -352,6 +352,11 @@ export const en: Record<string, string> = {
   "recommendation.reason.currentPicksSynergy": "{side}'s current picks change its expected synergy by {delta}% (up to {games} role-pair games)",
   "recommendation.reason.expectedMatchup": "Expected matchup into {side}'s current picks is {delta}% (up to {games} role-pair games)",
   "recommendation.reason.denyBlueFirstPick": "High-value Blue first pick; denying it is valuable",
+  // The {label} phrase inside blueClaimWithLeftover — sent by the engine as a
+  // translation key, not as literal text, so it renders in the active language.
+  "recommendation.survival.likelyBanTarget": "a likely Red ban target",
+  "recommendation.survival.moderateRisk": "at moderate contest risk from Red",
+  "recommendation.survival.likelySurvive": "likely to survive Red's next ban",
   "recommendation.reason.blueClaimWithLeftover": "Blue can only claim one strong open pick; banning this leaves {claim} as Blue's likely survivor while {leftover} remains {label}",
   "recommendation.reason.blueClaim": "Blue can only claim one strong open pick; banning this leaves {claim} as Blue's likely survivor",
   "recommendation.reason.patchAddedNoCurrent": "Added this patch; no current-patch games; {olderGames} older games discounted",
