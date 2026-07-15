@@ -339,6 +339,7 @@ export const en: Record<string, string> = {
   "recommendation.reason.viableRoles": "Viable in {count} roles",
   "recommendation.reason.roleAssignmentUnproven": "Role assignment is not evidence-backed; no coverage credit applied",
   "recommendation.reason.roleCollision": "Competes with current picks for the same primary role (-{penalty} score)",
+  "recommendation.reason.roleLocked": "{role} is already covered and this champion has no other viable role (-{penalty} score)",
   "recommendation.reason.highlyContested": "Highly contested in drafts (frequently picked or banned)",
   "recommendation.reason.blindPickFlexibility": "Blind-pick phase favors flexible role coverage",
   "recommendation.reason.patchWeightedWinRate": "{winRate}% patch-weighted win rate over {games} total games",

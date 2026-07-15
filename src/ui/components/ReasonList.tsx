@@ -4,7 +4,7 @@
 
 import { IconCheck, IconAlertTriangle, IconMinus } from "@tabler/icons-react";
 import type { Reason, ReasonTone } from "../types";
-import { useT } from "../stores/useI18nStore";
+import { useChampionName, useT } from "../stores/useI18nStore";
 
 const TONE_ICON: Record<ReasonTone, typeof IconCheck> = {
   positive: IconCheck,
@@ -21,14 +21,25 @@ type Props = {
 
 export function ReasonList({ reasons, className, limit = 4, iconSize = 13 }: Props) {
   const t = useT();
+  const championName = useChampionName();
   return (
     <ul className={className}>
       {reasons.slice(0, limit).map((reason, index) => {
         const Icon = TONE_ICON[reason.tone] ?? IconMinus;
+        const values = { ...reason.translationValues };
+        for (const [placeholder, championId] of Object.entries(reason.translationChampionIds ?? {})) {
+          values[placeholder] = championName(championId, values[placeholder] ?? championId);
+        }
+        for (const [placeholder, rawRole] of Object.entries(reason.translationRoleIds ?? {})) {
+          const role = rawRole === "bottom" ? "bot" : rawRole;
+          const key = `role.${role}`;
+          const translated = t(key);
+          values[placeholder] = translated === key ? (values[placeholder] ?? rawRole) : translated;
+        }
         return (
           <li key={index} className={`reason reason-${reason.tone}`}>
             <Icon size={iconSize} stroke={2.4} />
-            <span>{reason.translationKey ? t(reason.translationKey, reason.translationValues) : reason.text}</span>
+            <span>{reason.translationKey ? t(reason.translationKey, values) : reason.text}</span>
           </li>
         );
       })}

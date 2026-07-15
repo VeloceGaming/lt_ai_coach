@@ -60,6 +60,13 @@ const ROLE_CREDIBILITY_MIN_GAMES: usize = 5;
 const NEW_CHAMPION_ROLE_MIN_PROBABILITY: f64 = 0.30;
 const ROLE_COLLISION_SCORE_WEIGHT: f64 = 12.0;
 const ROLE_COLLISION_SCORE_CLAMP: f64 = 14.0;
+// A champion whose only viable role is already credibly covered is redundant in
+// the lineup. This flat penalty is large enough to drop it out of the 8-slot
+// shortlist while still letting it resurface if every alternative is dire.
+const ROLE_COLLISION_LOCKED_PENALTY: f64 = 28.0;
+// Minimum dominant-role probability before the locked penalty applies, so a
+// thin/uncertain champion with a flat role spread is never nuked on a weak guess.
+const ROLE_COLLISION_LOCKED_MIN_PROBABILITY: f64 = 0.5;
 const FORCED_OFF_ROLE_SCORE_PENALTY: f64 = 8.0;
 const ROLE_COLLISION_REASON_THRESHOLD: f64 = 3.0;
 
@@ -227,6 +234,10 @@ pub struct Reason {
     pub translation_key: Option<String>,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub translation_values: BTreeMap<String, String>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub translation_champion_ids: BTreeMap<String, String>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub translation_role_ids: BTreeMap<String, String>,
 }
 
 impl Reason {
@@ -245,6 +256,8 @@ impl Reason {
             tone,
             translation_key: None,
             translation_values: BTreeMap::new(),
+            translation_champion_ids: BTreeMap::new(),
+            translation_role_ids: BTreeMap::new(),
         }
     }
     fn translated<I, K, V>(mut self, key: &str, values: I) -> Self
@@ -257,6 +270,30 @@ impl Reason {
         self.translation_values = values
             .into_iter()
             .map(|(name, value)| (name.into(), value.into()))
+            .collect();
+        self
+    }
+    fn translated_champions<I, K, V>(mut self, champions: I) -> Self
+    where
+        I: IntoIterator<Item = (K, V)>,
+        K: Into<String>,
+        V: Into<String>,
+    {
+        self.translation_champion_ids = champions
+            .into_iter()
+            .map(|(placeholder, champion_id)| (placeholder.into(), champion_id.into()))
+            .collect();
+        self
+    }
+    fn translated_roles<I, K, V>(mut self, roles: I) -> Self
+    where
+        I: IntoIterator<Item = (K, V)>,
+        K: Into<String>,
+        V: Into<String>,
+    {
+        self.translation_role_ids = roles
+            .into_iter()
+            .map(|(placeholder, role_id)| (placeholder.into(), role_id.into()))
             .collect();
         self
     }
@@ -1038,14 +1075,27 @@ fn credible_flexibility(champion: &DraftChampion, roles: &[&ChampionRoleStat]) -
         .count()
 }
 
+/// Outcome of the role-collision check. `penalty` is subtracted from the pick
+/// score; `locked_role` is set only when the heavy penalty fired (the champion's
+/// sole viable role is already covered), so the caller can show a clear reason.
+struct RoleCollision {
+    penalty: f64,
+    locked_role: Option<String>,
+}
+
 fn role_collision_penalty(
     champion: &DraftChampion,
     roles: &[&ChampionRoleStat],
     candidate_model: &LineupModel,
+    covered_roles: &BTreeSet<String>,
     own_picks: &[String],
-) -> f64 {
+) -> RoleCollision {
+    let none = RoleCollision {
+        penalty: 0.0,
+        locked_role: None,
+    };
     let Some(candidate_claims) = candidate_model.role_claims.get(&champion.id) else {
-        return 0.0;
+        return none;
     };
     let Some((best_role_index, candidate_probability)) = candidate_claims
         .iter()
@@ -1053,7 +1103,7 @@ fn role_collision_penalty(
         .enumerate()
         .max_by(|left, right| left.1.total_cmp(&right.1))
     else {
-        return 0.0;
+        return none;
     };
     let existing_pressure = own_picks
         .iter()
@@ -1061,21 +1111,49 @@ fn role_collision_penalty(
         .map(|claims| claims[best_role_index])
         .sum::<f64>();
     let total_games = roles.iter().map(|row| row.games).sum();
-    let has_credible_alternative = ROLES.iter().enumerate().any(|(index, role)| {
-        index != best_role_index
-            && role_is_credible(
-                candidate_claims[index],
-                roles
-                    .iter()
-                    .find(|row| row.role == *role)
-                    .map(|row| row.games)
-                    .unwrap_or_default(),
-                total_games,
-            )
+    // A "viable" alternative is a role the champion could actually be moved to:
+    // credible role evidence AND a non-losing win rate there (the same bar
+    // `credible_flexibility` uses). A few off-role games at a poor win rate do
+    // not count, so fake flexibility can't rescue an otherwise single-role
+    // champion from the locked penalty below.
+    let has_viable_alternative = ROLES.iter().enumerate().any(|(index, role)| {
+        if index == best_role_index {
+            return false;
+        }
+        let row = roles.iter().find(|row| row.role == *role);
+        role_is_credible(
+            candidate_claims[index],
+            row.map(|row| row.games).unwrap_or_default(),
+            total_games,
+        ) && row
+            .map(|row| row.adjusted_win_rate >= 0.48)
+            .unwrap_or(total_games == 0)
     });
-    let flex_relief = if has_credible_alternative { 0.5 } else { 1.0 };
-    (ROLE_COLLISION_SCORE_WEIGHT * candidate_probability * existing_pressure * flex_relief)
-        .clamp(0.0, ROLE_COLLISION_SCORE_CLAMP)
+    let best_role = ROLES[best_role_index];
+    // Heavy "locked" penalty: the champion's dominant role is already credibly
+    // filled by an existing ally and it has no other viable role to slide into,
+    // so recommending it would just stack a second champion on a taken role.
+    // Drop it out of the shortlist instead of applying the small graded fine.
+    // The probability floor keeps a thin/unknown champion (flat role spread)
+    // from being locked out on a weak best-role guess.
+    if !has_viable_alternative
+        && candidate_probability >= ROLE_COLLISION_LOCKED_MIN_PROBABILITY
+        && covered_roles.contains(best_role)
+    {
+        return RoleCollision {
+            penalty: ROLE_COLLISION_LOCKED_PENALTY,
+            locked_role: Some(best_role.to_string()),
+        };
+    }
+    let flex_relief = if has_viable_alternative { 0.5 } else { 1.0 };
+    RoleCollision {
+        penalty: (ROLE_COLLISION_SCORE_WEIGHT
+            * candidate_probability
+            * existing_pressure
+            * flex_relief)
+            .clamp(0.0, ROLE_COLLISION_SCORE_CLAMP),
+        locked_role: None,
+    }
 }
 
 #[cfg(test)]
@@ -1290,7 +1368,8 @@ fn score_pick(
             + weights.flexibility * flexibility_value
             + weights.draft_order * draft_order_value
             + weights.draft_presence * draft_presence_value);
-    let collision_penalty = role_collision_penalty(champion, roles, candidate_model, own_picks);
+    let collision = role_collision_penalty(champion, roles, candidate_model, covered_roles, own_picks);
+    let collision_penalty = collision.penalty;
     let forced_assignment_penalty = if assigned_role_credible {
         0.0
     } else {
@@ -1329,7 +1408,7 @@ fn score_pick(
             ("role", title_role(&role.role)),
             ("winRate", format!("{:.1}", role.adjusted_win_rate * 100.0)),
             ("games", role.games.to_string()),
-        ]));
+        ]).translated_roles([("role", role.role.clone())]));
     } else {
         reasons.push(Reason::from_delta(
             format!(
@@ -1362,7 +1441,7 @@ fn score_pick(
             ("winRate", format!("{:.1}", pair.win_rate * 100.0)),
             ("games", pair.games.to_string()),
             ("delta", format!("{:+.1}", pair.delta * 100.0)),
-        ]));
+        ]).translated_champions([("champion", pair.other.clone())]));
     }
     // Named counter-pick evidence: the strongest lane clashes (either way)
     // against specific enemy picks, so it's clear who the matchup is about.
@@ -1397,7 +1476,8 @@ fn score_pick(
                 ("games", matchup.games.to_string()),
                 ("delta", format!("{:+.1}", matchup.delta * 100.0)),
             ],
-        ));
+        ).translated_champions([("champion", matchup.enemy.clone())])
+            .translated_roles([("role", matchup.role.clone())]));
     }
     if let Some(role) = best_role {
         if let (Some(rating), Some(baseline)) = (role.avg_rating, rating_baselines.get(&role.role))
@@ -1423,7 +1503,7 @@ fn score_pick(
                         ("rating", format!("{rating:.0}")),
                         ("average", format!("{:.0}", baseline.mean)),
                     ],
-                ));
+                ).translated_roles([("role", role.role.clone())]));
             }
         }
     }
@@ -1434,7 +1514,7 @@ fn score_pick(
                 title_role(&role.role)
             )).translated("recommendation.reason.addsUncoveredRole", [
                 ("role", title_role(&role.role)),
-            ]));
+            ]).translated_roles([("role", role.role.clone())]));
         }
     }
     if assigned_role_credible && flexibility >= 2 {
@@ -1446,7 +1526,15 @@ fn score_pick(
             "Role assignment is not evidence-backed; no coverage credit applied",
         ).translated("recommendation.reason.roleAssignmentUnproven", [] as [(&str, String); 0]));
     }
-    if collision_penalty >= ROLE_COLLISION_REASON_THRESHOLD {
+    if let Some(role) = &collision.locked_role {
+        reasons.push(Reason::negative(format!(
+            "{} is already covered and this champion has no other viable role (-{collision_penalty:.1} score)",
+            title_role(role)
+        )).translated("recommendation.reason.roleLocked", [
+            ("role", title_role(role)),
+            ("penalty", format!("{collision_penalty:.1}")),
+        ]).translated_roles([("role", role.clone())]));
+    } else if collision_penalty >= ROLE_COLLISION_REASON_THRESHOLD {
         reasons.push(Reason::negative(format!(
             "Competes with current picks for the same primary role (-{collision_penalty:.1} score)"
         )).translated("recommendation.reason.roleCollision", [
@@ -1506,8 +1594,8 @@ fn score_ban(
     first_pick: &FirstPickContext,
     draft_presence: &BTreeMap<String, f64>,
     portfolio_adjustment: f64,
-    portfolio_claim: Option<String>,
-    portfolio_leftover: Option<String>,
+    portfolio_claim: Option<(String, String)>,
+    portfolio_leftover: Option<(String, String)>,
     portfolio_leftover_survival: Option<f64>,
     redundant_ban_discount: f64,
     manual_tier: Option<ManualTier>,
@@ -1621,7 +1709,7 @@ fn score_ban(
         )).translated("recommendation.reason.peakThreat", [
             ("role", title_role(&role.role)),
             ("winRate", format!("{:.1}", role.adjusted_win_rate * 100.0)),
-        ]));
+        ]).translated_roles([("role", role.role.clone())]));
     }
     if flexibility >= 2 {
         reasons.push(Reason::positive(format!("Flexible across {flexibility} roles"))
@@ -1683,16 +1771,20 @@ fn score_ban(
     if portfolio_adjustment >= PORTFOLIO_ADJUSTMENT_REASON_THRESHOLD {
         let label = portfolio_leftover_survival.map(survival_label);
         match (portfolio_claim, portfolio_leftover, label) {
-            (Some(claim), Some(leftover), Some(label)) => reasons.push(Reason::neutral(format!(
+            (Some((claim_id, claim)), Some((leftover_id, leftover)), Some(label)) => reasons.push(Reason::neutral(format!(
                 "Blue can only claim one strong open pick; banning this leaves {claim} as Blue's likely survivor while {leftover} remains {label}"
             )).translated("recommendation.reason.blueClaimWithLeftover", [
                 ("claim", claim.to_string()),
                 ("leftover", leftover.to_string()),
                 ("label", label.to_string()),
+            ]).translated_champions([
+                ("claim", claim_id),
+                ("leftover", leftover_id),
             ])),
-            (Some(claim), _, _) => reasons.push(Reason::neutral(format!(
+            (Some((claim_id, claim)), _, _) => reasons.push(Reason::neutral(format!(
                 "Blue can only claim one strong open pick; banning this leaves {claim} as Blue's likely survivor"
-            )).translated("recommendation.reason.blueClaim", [("claim", claim.to_string())])),
+            )).translated("recommendation.reason.blueClaim", [("claim", claim.to_string())])
+                .translated_champions([("claim", claim_id)])),
             _ => {}
         }
     }
@@ -1917,7 +2009,7 @@ fn portfolio_adjustment_for(
     pool: &[PortfolioEntry],
     baseline: &PortfolioOutcome,
     ban_candidate: &str,
-) -> (f64, Option<String>, Option<String>, Option<f64>) {
+) -> (f64, Option<(String, String)>, Option<(String, String)>, Option<f64>) {
     if pool.len() < 2 || !pool.iter().any(|entry| entry.champion_id == ban_candidate) {
         return (0.0, None, None, None);
     }
@@ -1930,8 +2022,8 @@ fn portfolio_adjustment_for(
         .clamp(-PORTFOLIO_ADJUSTMENT_CLAMP, PORTFOLIO_ADJUSTMENT_CLAMP);
     (
         adjustment,
-        outcome.claim.map(|(_, name)| name),
-        outcome.leftover.map(|(_, name)| name),
+        outcome.claim,
+        outcome.leftover,
         outcome.leftover_survival,
     )
 }
@@ -2786,13 +2878,19 @@ mod tests {
         let (ban_soldier, claim_after, leftover_after, _) =
             portfolio_adjustment_for(&pool, &baseline, "soldier");
         assert!(ban_soldier > 0.0);
-        assert_eq!(claim_after.as_deref(), Some("whip_master"));
+        assert_eq!(
+            claim_after.as_ref().map(|(_, name)| name.as_str()),
+            Some("whip_master")
+        );
         assert_eq!(leftover_after, None);
 
         let (ban_whip_master, claim_after, leftover_after, _) =
             portfolio_adjustment_for(&pool, &baseline, "whip_master");
         assert!(ban_whip_master > 0.0);
-        assert_eq!(claim_after.as_deref(), Some("soldier"));
+        assert_eq!(
+            claim_after.as_ref().map(|(_, name)| name.as_str()),
+            Some("soldier")
+        );
         assert_eq!(leftover_after, None);
     }
 
@@ -3004,9 +3102,20 @@ mod tests {
             .roles
             .iter()
             .all(|role| role.role == "support" || !role.assigned));
-        assert!(
-            role_collision_penalty(&second, &[], &model, std::slice::from_ref(&first.id)) >= 10.0
+        let covered = projected_roles(
+            &model_lineup(
+                std::slice::from_ref(&first.id),
+                &champions,
+                &BTreeMap::new(),
+                &BTreeMap::new(),
+            )
+            .projection,
         );
+        let collision =
+            role_collision_penalty(&second, &[], &model, &covered, std::slice::from_ref(&first.id));
+        // A second dedicated support onto a covered support role is locked out.
+        assert_eq!(collision.locked_role.as_deref(), Some("support"));
+        assert!(collision.penalty >= ROLE_COLLISION_LOCKED_PENALTY);
     }
 
     #[test]

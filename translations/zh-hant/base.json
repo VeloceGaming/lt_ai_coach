@@ -346,6 +346,7 @@
   "recommendation.reason.viableRoles": "可走{count}個位置",
   "recommendation.reason.roleAssignmentUnproven": "位置分配缺乏數據支持，因此不計入位置覆蓋加分",
   "recommendation.reason.roleCollision": "與目前選角競爭相同的主要位置（評分 -{penalty}）",
+  "recommendation.reason.roleLocked": "{role}位置已被覆蓋，且此角色沒有其他可行位置（評分 -{penalty}）",
   "recommendation.reason.highlyContested": "選角階段的高價值角色（經常被選取或禁用）",
   "recommendation.reason.blindPickFlexibility": "盲選階段更重視可靈活補位的角色",
   "recommendation.reason.patchWeightedWinRate": "根據共 {games} 場對局計算的版本加權勝率為 {winRate}%",

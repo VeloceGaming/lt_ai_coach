@@ -221,6 +221,11 @@ export type Reason = {
    * engine. Older cached/preview reasons may omit these and fall back to text. */
   translationKey?: string;
   translationValues?: Record<string, string>;
+  /** Placeholder name -> champion id. The renderer resolves these through the
+   * active language while retaining translationValues as display fallbacks. */
+  translationChampionIds?: Record<string, string>;
+  /** Placeholder name -> raw role id, resolved through role.* translations. */
+  translationRoleIds?: Record<string, string>;
 };
 
 export type Recommendation = {
