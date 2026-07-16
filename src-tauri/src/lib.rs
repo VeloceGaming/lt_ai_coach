@@ -166,6 +166,17 @@ struct LiveRecommendationOptions {
     minimum_interaction_games: usize,
     #[serde(default)]
     role_overrides: std::collections::BTreeMap<String, String>,
+    // Shadow (hypothetical) champions staged on the board by the user while the
+    // bridge is live. Merged into the real draft before scoring so the
+    // recommendations answer "what if we lock this in?".
+    #[serde(default)]
+    shadow_blue_bans: Vec<String>,
+    #[serde(default)]
+    shadow_red_bans: Vec<String>,
+    #[serde(default)]
+    shadow_blue_picks: Vec<String>,
+    #[serde(default)]
+    shadow_red_picks: Vec<String>,
 }
 
 #[derive(Serialize)]
@@ -462,17 +473,44 @@ fn live_recommendation_request(
             .cloned()
             .collect()
     };
+    let bans_per_side = snapshot
+        .bans_per_side
+        .unwrap_or(options.bans_per_side)
+        .clamp(1, 5);
+    // Real draft first, then the user's shadow champions on the open slots.
+    // A shadow already on the real board (in any list) is stale and dropped.
+    let mut used: std::collections::BTreeSet<String> = snapshot
+        .blue_bans
+        .iter()
+        .chain(&snapshot.red_bans)
+        .chain(&snapshot.blue_picks)
+        .chain(&snapshot.red_picks)
+        .cloned()
+        .collect();
+    let merge = |real: &[String], shadows: &[String], cap: usize, used: &mut std::collections::BTreeSet<String>| {
+        let mut merged = real.to_vec();
+        for id in shadows {
+            if merged.len() >= cap {
+                break;
+            }
+            if used.insert(id.clone()) {
+                merged.push(id.clone());
+            }
+        }
+        merged
+    };
+    let blue_bans = merge(&snapshot.blue_bans, &options.shadow_blue_bans, bans_per_side, &mut used);
+    let red_bans = merge(&snapshot.red_bans, &options.shadow_red_bans, bans_per_side, &mut used);
+    let blue_picks = merge(&snapshot.blue_picks, &options.shadow_blue_picks, 5, &mut used);
+    let red_picks = merge(&snapshot.red_picks, &options.shadow_red_picks, 5, &mut used);
     Ok(recommendation::RecommendationRequest {
         mode: options.mode,
         side: side.to_string(),
-        blue_bans: snapshot.blue_bans.clone(),
-        red_bans: snapshot.red_bans.clone(),
-        blue_picks: snapshot.blue_picks.clone(),
-        red_picks: snapshot.red_picks.clone(),
-        bans_per_side: snapshot
-            .bans_per_side
-            .unwrap_or(options.bans_per_side)
-            .clamp(1, 5),
+        blue_bans,
+        red_bans,
+        blue_picks,
+        red_picks,
+        bans_per_side,
         history_blue: history(true),
         history_red: history(false),
         weights: options.weights,

@@ -1960,15 +1960,6 @@ body {
   font-size: 0.78rem;
 }
 
-.draft-slot-prompt {
-  margin: 8px 0 0;
-  border: 1px dashed #344044;
-  padding: 8px 10px;
-  color: #718084;
-  font-size: 0.68rem;
-  text-align: center;
-}
-
 .workspace-section,
 .utility-panel {
   margin-top: 8px;
@@ -2446,7 +2437,9 @@ body.compact-mode .draft-panel {
 .compact-draft-bar {
   position: relative;
   display: flex;
-  flex-direction: column;
+  /* Row layout: the main column (topbar + thirds) on the left, and the
+     full-height consultation panel on the right when open. */
+  flex-direction: row;
   width: 100%;
   height: 100%;
   min-height: 0;
@@ -2480,6 +2473,27 @@ body.compact-mode .draft-panel {
 .compact-draft-bar .compact-newseries:hover { border-color: var(--color-border-secondary); color: var(--color-text-primary); }
 .compact-draft-bar .compact-expand-btn { display: grid; width: 28px; height: 28px; min-width: 0; place-items: center; border: 0; border-radius: var(--radius-sm); padding: 0; color: var(--color-text-tertiary); background: transparent; }
 .compact-draft-bar .compact-expand-btn:hover { color: var(--color-text-primary); background: var(--color-background-tertiary); }
+.compact-draft-bar .compact-expand-btn.active { color: var(--color-text-info); background: var(--color-background-info); }
+
+/* Right-attached consultation panel (read-only champion search). The searched
+   card renders in the middle detail panel; this column is input + matches.
+   It spans the window's full height, beside the topbar rather than under it. */
+/* Pinned to the base window's content width (980 minus the 1px borders) so
+   the layout never reflows while the window is mid-resize — the panel is
+   simply revealed or clipped at the right edge. */
+.compact-main { display: flex; min-height: 0; flex: 0 0 978px; flex-direction: column; }
+.compact-search-panel { display: flex; flex: 0 0 240px; flex-direction: column; gap: 7px; min-height: 0; padding: 10px 13px 12px; border-left: 1px solid var(--color-border-tertiary); }
+.compact-search-input { display: flex; align-items: center; gap: 7px; border: 1px solid var(--color-border-tertiary); border-radius: var(--radius-md); padding: 5px 9px; color: var(--color-text-tertiary); background: var(--color-background-secondary); }
+.compact-search-input input { min-width: 0; flex: 1; border: 0; background: transparent; color: var(--color-text-primary); font-size: 12px; outline: none; }
+.compact-search-empty { color: var(--color-text-tertiary); font-size: 11px; line-height: 1.4; }
+.compact-search-matches { display: flex; flex-direction: column; gap: 4px; min-height: 0; overflow-y: auto; padding-right: 2px; }
+.compact-search-match { display: flex; align-items: center; gap: 8px; border: 1px solid var(--color-border-tertiary); border-radius: var(--radius-md); padding: 3px 7px 3px 3px; color: var(--color-text-secondary); background: var(--color-background-primary); cursor: pointer; text-align: left; }
+.compact-search-match:hover { border-color: var(--color-border-info); }
+.compact-search-match.active { border-color: var(--color-border-info); color: var(--color-text-info); background: var(--color-background-info); }
+.compact-search-match .champion-portrait { width: 30px; height: 40px; flex: 0 0 30px; border-radius: var(--radius-sm); overflow: hidden; background: var(--color-background-tertiary); }
+.compact-search-match-name { min-width: 0; flex: 1; overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.compact-search-match-rank { color: var(--color-text-tertiary); font-family: var(--font-mono); font-size: 9px; }
+.compact-search-rank { border-radius: var(--radius-sm); padding: 1px 6px; color: white; background: color-mix(in srgb, var(--color-border-info) 82%, #111); font-family: var(--font-mono); font-size: 9px; font-weight: var(--weight-semibold); }
 
 /* ── Three equal thirds ─────────────────────────────────────────────────── */
 .compact-thirds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: 16px; flex: 1; min-height: 0; padding: 14px 16px; }
@@ -2812,9 +2826,11 @@ body:not(.compact-mode) {
 
 /* ── Stage C: full Draft Board ─────────────────────────────────────────── */
 .full-draft-board {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
   color: var(--color-text-primary);
-  background: var(--color-background-secondary);
+  background: var(--color-background-primary);
   font-family: var(--font-sans);
   font-weight: var(--weight-normal);
 }
@@ -2822,6 +2838,7 @@ body:not(.compact-mode) {
 .full-draft-board button { font-family: inherit; cursor: pointer; }
 .full-draft-board button:disabled { cursor: not-allowed; opacity: 0.45; }
 .full-draft-topbar { display: flex; min-height: 62px; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--color-border-tertiary); padding: 10px 18px; background: var(--color-background-primary); }
+.draft-workspace-panel { min-height: 0; flex: 1; margin: 16px 18px; overflow: hidden; border: 1px solid var(--color-border-secondary); border-radius: 2px; background: var(--color-background-secondary); }
 .draft-brand, .draft-top-actions { display: flex; align-items: center; gap: 9px; }
 .draft-brand { color: var(--color-text-info); }
 .draft-brand strong { color: var(--color-text-primary); font-size: 16px; font-weight: var(--weight-bold); }
@@ -2837,7 +2854,7 @@ body:not(.compact-mode) {
 .full-draft-board .draft-toolbar-button:hover { border-color: var(--color-border-secondary); color: var(--color-text-primary); }
 .draft-patch-chip { border: 1px solid var(--color-border-tertiary); border-radius: var(--radius-md); padding: 9px 12px; color: var(--color-text-secondary); background: var(--color-background-primary); font-family: var(--font-mono); font-size: 10px; }
 
-.draft-turn-bar { display: flex; min-height: 58px; align-items: center; gap: 11px; margin: 16px 18px 0; border: 1px solid var(--color-border-tertiary); border-radius: var(--radius-lg); padding: 10px 14px; background: var(--color-background-primary); }
+.draft-turn-bar { display: flex; min-height: 58px; align-items: center; gap: 11px; margin: 0; border: 0; border-bottom: 1px solid var(--color-border-tertiary); border-radius: 0; padding: 10px 14px; background: transparent; }
 .turn-dot { width: 9px; height: 9px; flex: 0 0 9px; border-radius: 50%; background: var(--color-text-tertiary); }
 .draft-turn-bar.blue .turn-dot { background: var(--color-blue); }
 .draft-turn-bar.red .turn-dot { background: var(--color-red); }
@@ -2852,10 +2869,13 @@ body:not(.compact-mode) {
 .draft-auto-overlay { display: inline-flex; align-items: center; gap: 7px; color: var(--color-text-secondary); font-size: 11px; }
 .draft-auto-overlay input { width: 14px; height: 14px; min-height: 0; margin: 0; accent-color: var(--color-border-info); }
 
-.full-draft-layout { display: grid; grid-template-columns: 232px minmax(0, 1fr) 232px; gap: 14px; padding: 8px 18px 6px; }
+.full-draft-layout { display: grid; grid-template-columns: 232px minmax(0, 1fr) 232px; align-items: start; gap: 14px; padding: 12px; }
+.full-draft-team-column { display: flex; min-width: 0; flex-direction: column; gap: 8px; }
+.full-draft-team-column .full-draft-bans { width: fit-content; max-width: 100%; }
+.full-draft-team-column.red .full-draft-bans { align-self: flex-end; }
 .full-draft-side { min-width: 0; border: 1px solid transparent; border-radius: var(--radius-lg); padding: 10px; }
-.full-draft-side.is-user.blue { border-color: color-mix(in srgb, var(--color-blue-border) 62%, transparent); background: color-mix(in srgb, var(--color-blue-surface) 38%, transparent); box-shadow: inset 3px 0 0 var(--color-blue-border); }
-.full-draft-side.is-user.red { border-color: color-mix(in srgb, var(--color-red-border) 62%, transparent); background: color-mix(in srgb, var(--color-red-surface) 38%, transparent); box-shadow: inset -3px 0 0 var(--color-red-border); }
+.full-draft-side.is-user.blue { border-color: color-mix(in srgb, var(--color-blue-border) 62%, transparent); background: color-mix(in srgb, var(--color-blue-surface) 38%, transparent); }
+.full-draft-side.is-user.red { border-color: color-mix(in srgb, var(--color-red-border) 62%, transparent); background: color-mix(in srgb, var(--color-red-surface) 38%, transparent); }
 .full-draft-side > header { display: flex; height: 30px; align-items: center; gap: 7px; color: var(--color-blue); font-size: 11px; text-transform: uppercase; }
 .full-draft-side.red > header { justify-content: flex-end; color: var(--color-red); }
 .full-draft-side > header strong { font-weight: var(--weight-semibold); letter-spacing: var(--tracking-label); }
@@ -2883,12 +2903,127 @@ body:not(.compact-mode) {
 .empty-pick-portrait { display: grid !important; width: 58px; height: 76px; flex: 0 0 58px !important; place-items: center; border-radius: var(--radius-md); color: var(--color-text-info); background: var(--color-background-secondary); }
 .full-pick-slot.active .empty-pick-portrait { background: var(--color-background-primary); }
 
-/* ── Bans strip (both teams share one row below the pick columns) ─────────── */
-.draft-bans-strip { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 2px 18px 8px; }
+/* The slot a clicked champion card will land in: make the target unmissable. */
+.full-draft-board .full-pick-slot.empty.active,
+.full-draft-board .full-ban-slot.active {
+  border-style: solid;
+  border-color: var(--color-border-info);
+  background: var(--color-background-info);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-border-info) 30%, transparent);
+}
+
+/* A manually confirmed role reads in the accent color with a check mark. */
+.full-pick-slot .pick-role.confirmed { color: var(--color-text-info); }
+.full-pick-slot .pick-role.confirmed .role-glyph { background-color: currentColor; }
+
+/* Filled pick slot is a div-with-role now (role popover on click, corner × to
+   remove) so it needs explicit button-like affordances. */
+.full-draft-board .full-pick-slot.filled { position: relative; cursor: pointer; }
+.full-draft-board .full-pick-slot.filled:hover { border-color: var(--color-border-secondary); }
+.full-draft-board .full-pick-slot.filled:focus-visible { outline: 0; box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-border-info) 34%, transparent); }
+.full-slot-remove { position: absolute; top: 4px; right: 4px; display: grid; width: 20px; height: 20px; place-items: center; border: 0; border-radius: var(--radius-sm); padding: 0; color: var(--color-text-tertiary); background: transparent; opacity: 0; cursor: pointer; }
+.full-draft-side.red .full-slot-remove { right: auto; left: 4px; }
+.full-pick-slot.filled:hover .full-slot-remove, .full-slot-remove:focus-visible { opacity: 1; }
+.full-slot-remove:hover { color: var(--color-text-danger); background: var(--color-background-danger); }
+
+/* Shadow (hypothetical) entries: ghosted portrait + dashed accent border. */
+.full-draft-board .full-pick-slot.shadow,
+.full-draft-board .full-ban-slot.shadow { border-style: dashed; border-color: var(--color-border-info); background: color-mix(in srgb, var(--color-background-primary) 92%, var(--color-background-info)); }
+.full-draft-board .full-pick-slot.shadow > .champion-portrait,
+.full-draft-board .full-ban-slot.shadow > .champion-portrait { opacity: 0.55; }
+.full-draft-board .full-pick-slot.shadow strong { color: var(--color-text-info); }
+
+/* Shadow-draft mode pill: floats over the top of the board (like a "you are
+   sharing your screen" bar) for as long as any shadow exists. Filled surface,
+   so contrast holds in every theme. Absorbs the clear action (×). */
+.full-draft-board { position: relative; }
+
+/* Shadow-mode vignette: an accent glow breathing around the whole board's
+   edges — unmistakable "you are in a different mode", without covering any
+   content. Click-through; sits under the pill. */
+.full-draft-board.shadow-mode::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 55;
+  pointer-events: none;
+  box-shadow: inset 0 0 48px 3px color-mix(in srgb, var(--color-border-info) 28%, transparent);
+  animation: shadow-vignette-breathe 3.2s ease-in-out infinite;
+}
+@keyframes shadow-vignette-breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.shadow-mode-pill {
+  position: absolute;
+  z-index: 60;
+  top: 50px;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  border: 0;
+  border-radius: 14px;
+  padding: 9px 16px 7px;
+  color: #fff;
+  background: color-mix(in srgb, var(--color-border-info) 85%, #101418);
+  box-shadow: 0 6px 18px color-mix(in srgb, #000 35%, transparent);
+  cursor: pointer;
+  transform: translateX(-50%);
+  animation: shadow-pill-in var(--motion-base, 0.2s) var(--ease-out, ease-out);
+}
+/* Icon-first: a big bobbing ghost that morphs into an × on hover — the icon
+   itself is the clear button. The count rides its shoulder. */
+.shadow-pill-icon { position: relative; display: grid; width: 32px; height: 32px; place-items: center; }
+.shadow-pill-icon .pill-ghost { grid-area: 1 / 1; animation: shadow-pill-bob 2.4s ease-in-out infinite; }
+.shadow-pill-icon .pill-x { grid-area: 1 / 1; opacity: 0; transition: opacity 120ms ease; }
+.shadow-mode-pill:hover .pill-ghost { opacity: 0; animation-play-state: paused; }
+.shadow-mode-pill:hover .pill-x { opacity: 1; }
+.shadow-pill-count {
+  position: absolute;
+  top: -5px;
+  right: -9px;
+  border-radius: 999px;
+  padding: 0 5px;
+  background: rgb(255 255 255 / 22%);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: var(--weight-semibold);
+  line-height: 15px;
+}
+.shadow-pill-label { font-size: 10px; font-weight: var(--weight-semibold); letter-spacing: var(--tracking-label); text-transform: uppercase; opacity: 0.85; }
+@keyframes shadow-pill-in { from { opacity: 0; transform: translate(-50%, -8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@keyframes shadow-pill-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+
+/* An evicted ghost lingers at its old spot for a moment, dissolving away:
+   fade + drift up + blur. Non-interactive while it plays. */
+.full-draft-board .full-pick-slot.dissolving,
+.full-draft-board .full-ban-slot.dissolving {
+  animation: shadow-dissolve 1s ease-in forwards;
+  pointer-events: none;
+}
+@keyframes shadow-dissolve {
+  0% { opacity: 1; filter: none; transform: translateY(0); }
+  100% { opacity: 0; filter: blur(4px); transform: translateY(-9px); }
+}
+
+/* A real entry just replaced an evicted shadow: brief accent glow, fading. */
+.full-draft-board .full-pick-slot.shadow-replaced,
+.full-draft-board .full-ban-slot.shadow-replaced {
+  animation: shadow-replaced-flash 1.6s ease-out;
+}
+@keyframes shadow-replaced-flash {
+  0% { border-color: var(--color-border-info); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-border-info) 70%, transparent); }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+/* ── Bans rows (attached beneath their matching pick columns) ────────────── */
 .full-draft-bans { display: flex; align-items: center; gap: 12px; border: 1px solid transparent; border-radius: var(--radius-lg); padding: 6px 10px; }
 .full-draft-bans.red { flex-direction: row-reverse; }
-.full-draft-bans.is-user.blue { border-color: color-mix(in srgb, var(--color-blue-border) 62%, transparent); background: color-mix(in srgb, var(--color-blue-surface) 38%, transparent); box-shadow: inset 3px 0 0 var(--color-blue-border); }
-.full-draft-bans.is-user.red { border-color: color-mix(in srgb, var(--color-red-border) 62%, transparent); background: color-mix(in srgb, var(--color-red-surface) 38%, transparent); box-shadow: inset -3px 0 0 var(--color-red-border); }
+.full-draft-bans.is-user.blue { border-color: color-mix(in srgb, var(--color-blue-border) 62%, transparent); background: color-mix(in srgb, var(--color-blue-surface) 38%, transparent); }
+.full-draft-bans.is-user.red { border-color: color-mix(in srgb, var(--color-red-border) 62%, transparent); background: color-mix(in srgb, var(--color-red-surface) 38%, transparent); }
 .full-draft-bans .full-side-bans { min-height: 0; margin-bottom: 0; }
 
 /* ── Pick slot subtitle: champion (when a player name is the title) + role ── */
@@ -2968,15 +3103,32 @@ body:not(.compact-mode) {
 .draft-coach-column .scoring-controls { margin: 10px 0 0; border-color: var(--color-border-tertiary); border-radius: var(--radius-md); padding: 8px 10px; background: var(--color-background-primary); }
 .draft-coach-column .scoring-controls summary { color: var(--color-text-secondary); font-size: 9px; }
 
-.full-draft-board > .active-target-bar { width: calc(100% - 30px); margin: 2px 15px 8px; border-radius: var(--radius-md); }
-.full-draft-board > .draft-slot-prompt { margin: 2px 15px 8px; color: var(--color-text-tertiary); font-size: 9px; text-align: center; }
-.full-draft-board > .series-bar { margin: 0 15px 12px; border-color: var(--color-border-tertiary); border-radius: var(--radius-md); background: var(--color-background-primary); }
+.draft-workspace-panel > .active-target-bar { width: calc(100% - 30px); margin: 2px 15px 8px; border-radius: var(--radius-md); }
+.draft-workspace-panel > .series-bar { margin: 0 15px 12px; border-color: var(--color-border-tertiary); border-radius: var(--radius-md); background: var(--color-background-primary); }
+.draft-workspace-panel .series-label,
+.draft-workspace-panel .series-history-summary { color: var(--color-text-tertiary); }
+.draft-workspace-panel .series-game-btn { border-color: var(--color-border-secondary); color: var(--color-text-secondary); background: transparent; }
+.draft-workspace-panel .series-game-btn.active { border-color: var(--color-border-info); color: var(--color-text-info); background: var(--color-background-info); }
+.draft-workspace-panel .series-game-btn.done { border-color: var(--color-border-success); color: var(--color-text-success); }
+.draft-workspace-panel .blue-text { color: var(--color-blue-text); }
+.draft-workspace-panel .red-text { color: var(--color-red-text); }
+.draft-workspace-panel .sep { color: var(--color-text-tertiary); }
 /* The "Finish G#" button otherwise falls back to the legacy gold default
    button{} style; pin it to the accent as a primary action instead. */
 .full-draft-board .series-finish-btn { border: 1px solid var(--color-accent); color: #fff; background: var(--color-accent); }
 .full-draft-board .series-finish-btn:hover { background: color-mix(in srgb, var(--color-accent) 88%, #000); }
 
 /* ── Inline champion pool (search-and-click in the coach column) ─────────── */
+/* Consultation view: scored cards for a searched champion or role browse. */
+.consultation-results {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 480px;
+  overflow-y: auto;
+  padding-right: 3px;
+}
+
 .inline-champion-pool {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
@@ -3002,7 +3154,7 @@ body:not(.compact-mode) {
 }
 
 /* Active-target-bar: now a div (not a button), so needs an explicit border */
-.full-draft-board > .active-target-bar {
+.draft-workspace-panel > .active-target-bar {
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
@@ -3015,12 +3167,12 @@ body:not(.compact-mode) {
   background: color-mix(in srgb, var(--color-background-info) 40%, transparent);
 }
 
-.full-draft-board > .active-target-bar.red {
+.draft-workspace-panel > .active-target-bar.red {
   border-color: var(--color-border-danger);
   background: color-mix(in srgb, var(--color-background-danger) 40%, transparent);
 }
 
-.full-draft-board > .active-target-bar > span {
+.draft-workspace-panel > .active-target-bar > span {
   color: var(--color-text-secondary);
   font-size: 10px;
   font-weight: var(--weight-semibold);
@@ -3028,7 +3180,7 @@ body:not(.compact-mode) {
   text-transform: uppercase;
 }
 
-.full-draft-board > .active-target-bar > strong {
+.draft-workspace-panel > .active-target-bar > strong {
   margin-left: 10px;
   color: var(--color-text-primary);
   font-size: 13px;
@@ -3053,7 +3205,7 @@ body:not(.compact-mode) {
 }
 
 @media (max-width: 1050px) {
-  .full-draft-layout { grid-template-columns: 178px minmax(0, 1fr) 178px; gap: 10px; padding-inline: 10px; }
+  .full-draft-layout { grid-template-columns: 178px minmax(0, 1fr) 178px; gap: 10px; padding: 12px; }
   .full-draft-side { padding: 7px; }
   .full-recommendation-card { height: 212px; padding-left: 86px; }
   .recommendation-portrait { width: 86px; }

@@ -1,4 +1,4 @@
-import { IconDots } from "@tabler/icons-react";
+import { IconCheck, IconDots, IconX } from "@tabler/icons-react";
 import type { DraftAction, DraftChampion, DraftLineup, DraftSide, DraftState } from "../types";
 import { ChampionPortraitView } from "./ChampionPortraitView";
 import { RoleGlyph } from "./RoleGlyph";
@@ -22,9 +22,26 @@ type FullDraftSideProps = {
   onSlotClick: (action: DraftAction) => void;
   lineup?: DraftLineup | null;
   athleteNames?: Map<number, string>;
+  // Champions in these sets are shadow (hypothetical) entries — rendered
+  // ghosted, and removal routes to the shadow layer (handled by the caller).
+  shadowIds?: Set<string>;
+  // When set, clicking a filled pick slot opens the role-confirm popover
+  // instead of removing the champion (removal moves to the corner × button).
+  onRoleClick?: (championId: string, championName: string, event: { clientX: number; clientY: number }) => void;
+  // championId -> role to display on a filled slot (confirmed override first,
+  // else the engine's inferred role). Falls back to the slot's position.
+  roles?: Map<string, string>;
+  // Champions whose role the user confirmed manually, for the ✓ styling.
+  overrides?: Record<string, string>;
+  // Champions whose real slot just replaced an evicted shadow — plays a brief
+  // accent flash so the eye catches what changed.
+  flashIds?: Set<string>;
+  // Just-evicted ghosts lingering at their old spot while their dissolve
+  // animation plays. Always a subset of shadowIds; non-interactive.
+  dissolvingIds?: Set<string>;
 };
 
-export function FullDraftSide({ side, part, bansPerSide, isUser, bans, picks, champions, activeAction, onRemove, onSlotClick, lineup, athleteNames }: FullDraftSideProps) {
+export function FullDraftSide({ side, part, bansPerSide, isUser, bans, picks, champions, activeAction, onRemove, onSlotClick, lineup, athleteNames, shadowIds, onRoleClick, roles, overrides, flashIds, dissolvingIds }: FullDraftSideProps) {
   const t = useT();
   const sideLabel = t(`draft.side.${side}`);
   const banAction: DraftAction = `${side}-ban`;
@@ -36,20 +53,22 @@ export function FullDraftSide({ side, part, bansPerSide, isUser, bans, picks, ch
   const activeBanIndex = activeAction === banAction ? bans.length : -1;
   const activePickIndex = activeAction === pickAction ? picks.length : -1;
   const names = athleteNames ?? new Map<number, string>();
+  const isShadow = (id: string) => shadowIds?.has(id) ?? false;
 
-  // The player assigned to a slot's role, if a live lineup is present.
-  const athleteForSlot = (index: number): string | null => {
+  // The player assigned to a role, if a live lineup is present.
+  const athleteForRole = (role: string): string | null => {
     if (!lineup) return null;
-    const id = (lineup as Record<string, number | null | undefined>)[ROLE_ORDER[index]];
+    const id = (lineup as Record<string, number | null | undefined>)[role];
     return typeof id === "number" ? names.get(id) ?? null : null;
   };
+  const athleteForSlot = (index: number): string | null => athleteForRole(ROLE_ORDER[index]);
 
   // Bans part: a compact row (both teams share one strip below the picks).
   if (part === "bans") {
     return <div className={`full-draft-bans ${side}${isUser ? " is-user" : ""}`} aria-label={`${sideLabel} ${t("draft.aria.bans")}`}>
       <div className="full-side-bans">
         {banSlots.map((id, index) => id
-          ? <button type="button" key={`${id}-${index}`} className="full-ban-slot filled" title={`${t("draft.removeTooltip")} ${champions.get(id)?.name ?? id}`} onClick={() => onRemove(bansTarget, id)}><ChampionPortraitView portrait={champions.get(id)?.portrait ?? null} width={34} height={46} /></button>
+          ? <button type="button" key={`${id}-${index}`} className={`full-ban-slot filled${isShadow(id) ? " shadow" : ""}${dissolvingIds?.has(id) ? " dissolving" : flashIds?.has(id) ? " shadow-replaced" : ""}`} title={`${isShadow(id) ? `${t("draft.shadowSlotTooltip")} — ` : ""}${t("draft.removeTooltip")} ${champions.get(id)?.name ?? id}`} onClick={() => onRemove(bansTarget, id)}><ChampionPortraitView portrait={champions.get(id)?.portrait ?? null} width={34} height={46} /></button>
           : <button type="button" key={`ban-${index}`} className={`full-ban-slot${index === activeBanIndex ? " active" : ""}`} aria-label={`${sideLabel} ${t("draft.aria.ban")} ${index + 1}`} onClick={() => onSlotClick(banAction)}>{index === activeBanIndex ? <IconDots size={17} stroke={2.2} /> : index + 1}</button>)}
       </div>
     </div>;
@@ -61,28 +80,63 @@ export function FullDraftSide({ side, part, bansPerSide, isUser, bans, picks, ch
     <div className="full-side-picks" aria-label={`${sideLabel} ${t("draft.aria.picks")}`}>
       {pickSlots.map((id, index) => {
         const champion = id ? champions.get(id) : undefined;
-        const role = ROLE_ORDER[index];
+        // Filled slots show the champion's actual role (confirmed override or
+        // engine-inferred); empty slots show the positional role as a hint.
+        const role = (id ? roles?.get(id) : undefined) ?? ROLE_ORDER[index];
         const roleLabel = t(`role.${role}`);
-        const athlete = athleteForSlot(index);
+        const overridden = id != null && overrides != null && id in overrides;
+        const athlete = id ? athleteForRole(role) : athleteForSlot(index);
         const active = index === activePickIndex;
-        return id
-          ? <button type="button" key={`${id}-${index}`} className="full-pick-slot filled" title={`${t("draft.removeTooltip")} ${champion?.name ?? id}`} onClick={() => onRemove(picksTarget, id)}>
-              <ChampionPortraitView portrait={champion?.portrait ?? null} width={58} height={78} />
-              <span>
-                <strong>{athlete ?? champion?.name ?? id}</strong>
-                <span className="pick-sub">
-                  {athlete && <span className="pick-champ">{champion?.name ?? id}</span>}
-                  <span className="pick-role"><RoleGlyph role={role} />{roleLabel}</span>
-                </span>
-              </span>
-            </button>
-          : <button type="button" key={`pick-${index}`} className={`full-pick-slot empty${active ? " active" : ""}`} onClick={() => onSlotClick(pickAction)}>
-              <span className="empty-pick-portrait">{active ? <IconDots size={23} stroke={2.2} /> : <RoleGlyph role={role} />}</span>
-              <span>
-                <strong>{active ? t("draft.picking") : athlete ?? roleLabel}</strong>
-                <span className="pick-sub"><span className="pick-role"><RoleGlyph role={role} />{roleLabel}</span></span>
-              </span>
-            </button>;
+        if (!id) {
+          return <button type="button" key={`pick-${index}`} className={`full-pick-slot empty${active ? " active" : ""}`} onClick={() => onSlotClick(pickAction)}>
+            <span className="empty-pick-portrait">{active ? <IconDots size={23} stroke={2.2} /> : <RoleGlyph role={role} />}</span>
+            <span>
+              <strong>{active ? t("draft.picking") : athlete ?? roleLabel}</strong>
+              <span className="pick-sub"><span className="pick-role"><RoleGlyph role={role} />{roleLabel}</span></span>
+            </span>
+          </button>;
+        }
+        const name = champion?.name ?? id;
+        const shadow = isShadow(id);
+        // With a role handler the slot body opens the role popover and the
+        // corner × removes; without one the whole slot removes (old behavior).
+        const bodyTitle = onRoleClick
+          ? `${t("draft.assignRoleTooltip")} ${name}`
+          : `${t("draft.removeTooltip")} ${name}`;
+        return <div
+          key={`${id}-${index}`}
+          className={`full-pick-slot filled${shadow ? " shadow" : ""}${dissolvingIds?.has(id) ? " dissolving" : flashIds?.has(id) ? " shadow-replaced" : ""}`}
+          role="button"
+          tabIndex={0}
+          title={shadow ? `${t("draft.shadowSlotTooltip")} — ${bodyTitle}` : bodyTitle}
+          onClick={(event) => onRoleClick ? onRoleClick(id, name, event) : onRemove(picksTarget, id)}
+          onKeyDown={(event) => {
+            if (event.key !== "Enter" && event.key !== " ") return;
+            event.preventDefault();
+            if (onRoleClick) {
+              const rect = event.currentTarget.getBoundingClientRect();
+              onRoleClick(id, name, { clientX: rect.left + rect.width / 2, clientY: rect.bottom });
+            } else {
+              onRemove(picksTarget, id);
+            }
+          }}
+        >
+          <ChampionPortraitView portrait={champion?.portrait ?? null} width={58} height={78} />
+          <span>
+            <strong>{athlete ?? name}</strong>
+            <span className="pick-sub">
+              {athlete && <span className="pick-champ">{name}</span>}
+              <span className={`pick-role${overridden ? " confirmed" : ""}`} title={overridden ? t("draft.roleConfirmedTooltip") : undefined}><RoleGlyph role={role} />{roleLabel}{overridden && <IconCheck size={11} stroke={2.6} />}</span>
+            </span>
+          </span>
+          {onRoleClick && <button
+            type="button"
+            className="full-slot-remove"
+            title={`${t("draft.removeTooltip")} ${name}`}
+            aria-label={`${t("draft.removeTooltip")} ${name}`}
+            onClick={(event) => { event.stopPropagation(); onRemove(picksTarget, id); }}
+          ><IconX size={13} stroke={2.4} /></button>}
+        </div>;
       })}
     </div>
   </section>;

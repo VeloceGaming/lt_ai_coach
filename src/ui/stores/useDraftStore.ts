@@ -9,8 +9,8 @@
 // preferences drawer instead of a local variable.
 
 import { create } from "zustand";
-import type { BridgeState, DraftAction, DraftMode, DraftState, GameRecord } from "../types";
-import { actionTarget, currentDraftAction, emptyDraft, removeLatestAction, unavailableReason } from "../lib/draft";
+import type { BridgeState, DraftAction, DraftMode, DraftState, GameRecord, ShadowLists } from "../types";
+import { actionTarget, currentDraftAction, emptyDraft, emptyShadow, mergeShadow, removeLatestAction, unavailableReason } from "../lib/draft";
 import { usePreferencesStore } from "./usePreferencesStore";
 
 type DraftStoreState = {
@@ -30,6 +30,17 @@ type DraftStoreState = {
   // close the picker.
   pushChampion: (championId: string, action: DraftAction, bansPerSide?: number, mode?: DraftMode) => boolean;
   removeChampion: (target: keyof DraftState, championId: string) => void;
+  // Shadow (hypothetical) champions staged while the bridge owns the real
+  // draft. A separate layer: the real board is never mutated, and a real
+  // update silently evicts any shadow it collides with.
+  shadow: ShadowLists;
+  pushShadowChampion: (championId: string, action: DraftAction, bansPerSide?: number, mode?: DraftMode) => boolean;
+  removeShadowChampion: (target: keyof ShadowLists, championId: string) => void;
+  clearShadows: () => void;
+  // Shadows just evicted by a real bridge update, with the list they lived
+  // in, so the board can play a dissolve at the ghost's old spot and flash
+  // the real slot that replaced it. `stamp` makes each batch distinct.
+  shadowEvictions: { entries: { championId: string; target: keyof ShadowLists }[]; stamp: number } | null;
   undo: () => void;
   resetCurrent: () => void;
   saveCurrentGame: () => void;
@@ -88,6 +99,30 @@ export const useDraftStore = create<DraftStoreState>((set, get) => ({
     return true;
   },
 
+  shadow: emptyShadow,
+  shadowEvictions: null,
+
+  pushShadowChampion: (championId, action, bansPerSide = usePreferencesStore.getState().bansPerSide, mode = usePreferencesStore.getState().mode) => {
+    // Only board slots can hold shadows; series-history entries stay real.
+    const target: keyof ShadowLists | null =
+      action === "blue-ban" ? "blueBans" : action === "red-ban" ? "redBans"
+        : action === "blue-pick" ? "bluePicks" : action === "red-pick" ? "redPicks" : null;
+    if (!target) return false;
+    const { draft, shadow } = get();
+    // Availability is judged against the board as imagined (real + shadows),
+    // so a champion can't be shadowed twice or overflow a full slot row.
+    const reason = unavailableReason(championId, action, mode, mergeShadow(draft, shadow, bansPerSide), bansPerSide);
+    if (reason) return false;
+    set({ shadow: { ...shadow, [target]: [...shadow[target], championId] } });
+    return true;
+  },
+
+  removeShadowChampion: (target, championId) => set((state) => ({
+    shadow: { ...state.shadow, [target]: state.shadow[target].filter((id) => id !== championId) },
+  })),
+
+  clearShadows: () => set({ shadow: emptyShadow }),
+
   removeChampion: (target, championId) => {
     const { draft, history, roleOverrides } = get();
     const next = { ...draft, [target]: (draft[target] as string[]).filter((id) => id !== championId) };
@@ -107,7 +142,7 @@ export const useDraftStore = create<DraftStoreState>((set, get) => ({
 
   resetCurrent: () => {
     const { draft, history } = get();
-    set({ history: [...history, draft], draft: { ...draft, blueBans: [], redBans: [], bluePicks: [], redPicks: [], actionLog: [] }, roleOverrides: {} });
+    set({ history: [...history, draft], draft: { ...draft, blueBans: [], redBans: [], bluePicks: [], redPicks: [], actionLog: [] }, roleOverrides: {}, shadow: emptyShadow });
   },
 
   saveCurrentGame: () => {
@@ -119,7 +154,7 @@ export const useDraftStore = create<DraftStoreState>((set, get) => ({
   moveToGame: (gameNum) => {
     get().saveCurrentGame();
     const { draft, history } = get();
-    set({ currentGame: gameNum, history: [...history, draft], draft: { ...draft, blueBans: [], redBans: [], bluePicks: [], redPicks: [], actionLog: [] }, roleOverrides: {} });
+    set({ currentGame: gameNum, history: [...history, draft], draft: { ...draft, blueBans: [], redBans: [], bluePicks: [], redPicks: [], actionLog: [] }, roleOverrides: {}, shadow: emptyShadow });
   },
 
   finishGame: () => {
@@ -135,6 +170,7 @@ export const useDraftStore = create<DraftStoreState>((set, get) => ({
       currentGame: 1,
       draft: { ...draft, blueBans: [], redBans: [], bluePicks: [], redPicks: [], historyBlue: [], historyRed: [], actionLog: [] },
       roleOverrides: {},
+      shadow: emptyShadow,
     });
   },
 
@@ -152,6 +188,7 @@ export const useDraftStore = create<DraftStoreState>((set, get) => ({
         currentGame: setNumber,
         completedGames,
         roleOverrides: {},
+        shadow: emptyShadow,
       };
     }
     if (state.currentGame === setNumber) {
@@ -164,10 +201,42 @@ export const useDraftStore = create<DraftStoreState>((set, get) => ({
       currentGame: setNumber,
       completedGames,
       roleOverrides: {},
+      shadow: emptyShadow,
     };
   }),
 
-  applyBridgeUpdate: (lists) => set((state) => ({
-    draft: { ...state.draft, blueBans: lists.blueBans, redBans: lists.redBans, bluePicks: lists.bluePicks, redPicks: lists.redPicks },
-  })),
+  applyBridgeUpdate: (lists) => set((state) => {
+    // A real update wins over shadows in three ways:
+    //  - collision: the shadowed champion itself landed anywhere on the real
+    //    board — evicted (cross-list plays a dissolve, same-list a flash);
+    //  - overwrite: a new real entry lands in the slot a shadow was visually
+    //    holding — that shadow is consumed and the real slot flashes, rather
+    //    than the shadow sliding down a slot;
+    //  - overflow: the row filled up — excess shadows leave silently.
+    const used = new Set([...lists.blueBans, ...lists.redBans, ...lists.bluePicks, ...lists.redPicks]);
+    const targets: (keyof ShadowLists)[] = ["blueBans", "redBans", "bluePicks", "redPicks"];
+    const shadow = { ...state.shadow };
+    const evicted: Array<{ championId: string; target: keyof ShadowLists }> = [];
+    for (const target of targets) {
+      const before = state.shadow[target];
+      const oldReal = state.draft[target];
+      const newReal = lists[target];
+      for (const championId of before.filter((id) => used.has(id))) evicted.push({ championId, target });
+      let remaining = before.filter((id) => !used.has(id));
+      // Each new real entry that was not this list's own shadow consumes the
+      // front-most remaining shadow — the one visually holding its slot. The
+      // eviction records the real champion so the flash lands on that slot.
+      for (const realId of newReal.filter((id) => !oldReal.includes(id))) {
+        if (before.includes(realId) || remaining.length === 0) continue;
+        remaining = remaining.slice(1);
+        evicted.push({ championId: realId, target });
+      }
+      shadow[target] = remaining.slice(0, Math.max(0, 5 - newReal.length));
+    }
+    return {
+      draft: { ...state.draft, blueBans: lists.blueBans, redBans: lists.redBans, bluePicks: lists.bluePicks, redPicks: lists.redPicks },
+      shadow,
+      shadowEvictions: evicted.length ? { entries: evicted, stamp: Date.now() } : state.shadowEvictions,
+    };
+  }),
 }));

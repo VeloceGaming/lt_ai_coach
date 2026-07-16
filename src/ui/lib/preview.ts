@@ -30,6 +30,10 @@ export function previewRecommendations(champions: DraftChampion[]): Recommendati
   return {
     banRecommendations: rows.slice(0, 4),
     pickRecommendations: rows.slice(4, 8),
+    banPool: rows.slice(0, 4),
+    pickPool: rows.slice(4, 8),
+    pickExclusions: [],
+    banExclusions: [],
     blueProjection: projection,
     redProjection: projection,
   };

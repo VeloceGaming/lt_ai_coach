@@ -207,8 +207,97 @@ impl Default for DraftTuning {
 pub struct RecommendationShortlist {
     pub pick_recommendations: Vec<Recommendation>,
     pub ban_recommendations: Vec<Recommendation>,
+    /// Every scoreable champion, sorted by pick score — the consultation pool
+    /// behind champion search and role browsing. Superset of the top-8
+    /// `pick_recommendations` shortlist above.
+    pub pick_pool: Vec<Recommendation>,
+    /// Every ban-scoreable champion, sorted by ban score. Also includes a
+    /// protected Blue first pick that the ban shortlist deliberately omits.
+    pub ban_pool: Vec<Recommendation>,
+    /// Champions with no pick card in this draft, and why (banned, picked,
+    /// Fearless-burned, F-tiered, no data). Lets a search explain the absence.
+    pub pick_exclusions: Vec<ExcludedChampion>,
+    /// Champions with no ban card in this draft. Narrower than the pick list:
+    /// F-tiered and (soft) Fearless-burned champions can still be ban-scored.
+    pub ban_exclusions: Vec<ExcludedChampion>,
     pub blue_projection: TeamProjection,
     pub red_projection: TeamProjection,
+}
+
+/// Why a champion has no score card in the current draft. Side names are
+/// absolute (Blue/Red) except the Fearless variants, which are relative to the
+/// requesting side because "your team already played this" is what the coach
+/// needs to know.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum ExclusionReason {
+    BannedByBlue,
+    BannedByRed,
+    PickedByBlue,
+    PickedByRed,
+    /// Fearless: the requesting side already played it earlier in the series.
+    FearlessUsedOwn,
+    /// Hard Fearless: the opponent already played it earlier in the series.
+    FearlessUsedByOpponent,
+    /// Manual tier F ("never recommend").
+    ManuallyExcluded,
+    /// The champion has no recorded games, so there is nothing to score.
+    NoData,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExcludedChampion {
+    pub champion_id: String,
+    pub champion_name: String,
+    pub portrait: Option<crate::statistics::ChampionPortrait>,
+    pub reason: ExclusionReason,
+}
+
+fn excluded_champion(champion: &DraftChampion, reason: ExclusionReason) -> ExcludedChampion {
+    ExcludedChampion {
+        champion_id: champion.id.clone(),
+        champion_name: champion.name.clone(),
+        portrait: champion.portrait.clone(),
+        reason,
+    }
+}
+
+/// Exclusion reason for a champion already on the board, if any. Checks bans
+/// before picks; a champion normally appears in exactly one of the four lists.
+fn usage_exclusion_reason(
+    champion_id: &str,
+    request: &RecommendationRequest,
+) -> Option<ExclusionReason> {
+    if request.blue_bans.iter().any(|id| id == champion_id) {
+        Some(ExclusionReason::BannedByBlue)
+    } else if request.red_bans.iter().any(|id| id == champion_id) {
+        Some(ExclusionReason::BannedByRed)
+    } else if request.blue_picks.iter().any(|id| id == champion_id) {
+        Some(ExclusionReason::PickedByBlue)
+    } else if request.red_picks.iter().any(|id| id == champion_id) {
+        Some(ExclusionReason::PickedByRed)
+    } else {
+        None
+    }
+}
+
+/// For a champion blocked by hard Fearless: whose series history burned it.
+/// Own history wins when both sides have played it.
+fn hard_fearless_exclusion_reason(
+    champion_id: &str,
+    request: &RecommendationRequest,
+) -> ExclusionReason {
+    let own_history = if request.side == "red" {
+        &request.history_red
+    } else {
+        &request.history_blue
+    };
+    if own_history.iter().any(|id| id == champion_id) {
+        ExclusionReason::FearlessUsedOwn
+    } else {
+        ExclusionReason::FearlessUsedByOpponent
+    }
 }
 
 /// Whether a reason argues *for* the recommended action (positive / good news),
@@ -559,17 +648,31 @@ fn build_shortlist_internal(
 
     let mut picks = Vec::new();
     let mut blue_first_picks = Vec::new();
+    let mut pick_exclusions = Vec::new();
+    let mut ban_exclusions = Vec::new();
     for (&champion_id, &champion) in &champions {
-        if used.contains(champion_id) || blocked_by_hard_fearless(champion_id, request) {
+        if let Some(reason) = usage_exclusion_reason(champion_id, request) {
+            pick_exclusions.push(excluded_champion(champion, reason));
+            ban_exclusions.push(excluded_champion(champion, reason));
+            continue;
+        }
+        if blocked_by_hard_fearless(champion_id, request) {
+            let reason = hard_fearless_exclusion_reason(champion_id, request);
+            pick_exclusions.push(excluded_champion(champion, reason));
+            ban_exclusions.push(excluded_champion(champion, reason));
             continue;
         }
         let Some(overall_row) = overall.get(champion_id).copied() else {
+            pick_exclusions.push(excluded_champion(champion, ExclusionReason::NoData));
+            ban_exclusions.push(excluded_champion(champion, ExclusionReason::NoData));
             continue;
         };
         // Manual tier override. An F flag ("never recommend") drops the
         // champion from pick suggestions entirely; other tiers nudge its score.
+        // Pick-only exclusion: the ban loops below still score F-tier champions.
         let manual_tier = manual_tiers.get(champion_id).copied();
         if manual_tier.is_some_and(ManualTier::is_excluded) {
+            pick_exclusions.push(excluded_champion(champion, ExclusionReason::ManuallyExcluded));
             continue;
         }
         let candidate_roles = role_rows.get(champion_id).cloned().unwrap_or_default();
@@ -602,6 +705,9 @@ fn build_shortlist_internal(
                 recommendation_athlete_context(request, champion_id, projected_role, athlete_index);
             Some(recommendation)
         } else {
+            // Only reachable in soft Fearless (hard mode was caught above), so
+            // the block is always this side's own series history.
+            pick_exclusions.push(excluded_champion(champion, ExclusionReason::FearlessUsedOwn));
             None
         };
         if let Some(pick) = candidate_pick {
@@ -756,6 +862,7 @@ fn build_shortlist_internal(
     }
     let opposing_best_ban_score = opposing_ban_scores.values().copied().fold(0.0, f64::max);
     let mut bans = Vec::new();
+    let mut protected_bans = Vec::new();
     for (&champion_id, &champion) in &champions {
         if used.contains(champion_id) || blocked_by_hard_fearless(champion_id, request) {
             continue;
@@ -769,11 +876,10 @@ fn build_shortlist_internal(
             .filter(|row| row.games >= 5 && row.adjusted_win_rate >= 0.48)
             .count();
         let pick_score = pick_scores.get(champion_id).copied();
-        if request.side == "blue"
-            && is_protected_blue_first_pick(pick_score, &first_pick, red_bans_remaining)
-        {
-            continue;
-        }
+        // A protected Blue first pick stays out of the ban shortlist, but the
+        // consultation pool still scores it so a search can show its card.
+        let protected = request.side == "blue"
+            && is_protected_blue_first_pick(pick_score, &first_pick, red_bans_remaining);
         let (portfolio_adjustment, portfolio_claim, portfolio_leftover, leftover_survival) =
             portfolio_adjustment_for(&portfolio_pool, &baseline_portfolio, champion_id);
         let redundant_discount = redundant_ban_discount(
@@ -791,7 +897,7 @@ fn build_shortlist_internal(
             request.minimum_interaction_games,
             &forced_roles,
         );
-        bans.push(score_ban(
+        let recommendation = score_ban(
             champion,
             overall_row,
             &candidate_roles,
@@ -812,13 +918,29 @@ fn build_shortlist_internal(
             leftover_survival,
             redundant_discount,
             manual_tiers.get(champion_id).copied(),
-        ));
+        );
+        if protected {
+            protected_bans.push(recommendation);
+        } else {
+            bans.push(recommendation);
+        }
     }
+    // The full sorted pools feed champion search / role browsing; the shortlists
+    // below stay truncated to the top 8 for the recommendation cards.
+    let mut pick_pool = picks.clone();
+    sort_rows(&mut pick_pool);
+    let mut ban_pool = bans.clone();
+    ban_pool.append(&mut protected_bans);
+    sort_rows(&mut ban_pool);
     sort_and_limit(&mut picks);
     sort_and_limit(&mut bans);
     RecommendationShortlist {
         pick_recommendations: picks,
         ban_recommendations: bans,
+        pick_pool,
+        ban_pool,
+        pick_exclusions,
+        ban_exclusions,
         blue_projection,
         red_projection,
     }
@@ -2564,13 +2686,17 @@ fn pick_is_legal_for_side(champion_id: &str, request: &RecommendationRequest, si
                 || !opponent_history.iter().any(|id| id == champion_id)))
 }
 
-fn sort_and_limit(rows: &mut Vec<Recommendation>) {
+fn sort_rows(rows: &mut [Recommendation]) {
     rows.sort_by(|left, right| {
         right
             .score
             .total_cmp(&left.score)
             .then_with(|| left.champion_id.cmp(&right.champion_id))
     });
+}
+
+fn sort_and_limit(rows: &mut Vec<Recommendation>) {
+    sort_rows(rows);
     rows.truncate(8);
 }
 
@@ -2619,6 +2745,149 @@ mod tests {
             red_lineup: None,
             role_overrides: BTreeMap::new(),
         }
+    }
+
+    fn stat_row(id: &str, role: &str, games: usize, wins: usize) -> ChampionRoleStat {
+        ChampionRoleStat {
+            champion_id: id.to_string(),
+            champion_name: id.to_string(),
+            role: role.to_string(),
+            portrait: None,
+            games,
+            current_patch_games: games,
+            effective_games: games as f64,
+            patch_changed: false,
+            patch_added: false,
+            patch_impact: 0.0,
+            patch_changes: vec![],
+            wins,
+            tournament_games: games,
+            solo_games: 0,
+            win_rate: wins as f64 / games as f64,
+            adjusted_win_rate: wins as f64 / games as f64,
+            pilot_win_rate_delta: 0.0,
+            confidence: 0.8,
+            avg_kills: None,
+            avg_deaths: None,
+            avg_assists: None,
+            kda: None,
+            avg_damage: None,
+            avg_tanking: None,
+            avg_healing: None,
+            avg_cs: None,
+            avg_gold: None,
+            avg_rating: None,
+            patch_timeline: vec![],
+        }
+    }
+
+    #[test]
+    fn consultation_pool_reports_full_scores_and_exclusion_reasons() {
+        let catalog = DraftCatalog {
+            champions: vec![
+                champion_with_role("alpha", "top"),
+                champion_with_role("bravo", "jungle"),
+                champion_with_role("charlie", "mid"),
+                champion_with_role("delta", "bot"),
+                champion_with_role("echo", "support"),
+                champion_with_role("foxtrot", "top"),
+                // Ghost has no statistics rows at all -> "no data" exclusion.
+                champion_with_role("ghost", "top"),
+            ],
+        };
+        let with_stats = ["alpha", "bravo", "charlie", "delta", "echo", "foxtrot"];
+        let statistics = crate::statistics::RoleStatistics {
+            database_path: String::new(),
+            total_matches: 120,
+            current_patch: "1.0".to_string(),
+            global_win_rate: 0.5,
+            prior_games: 10,
+            reliable_games: 20,
+            overall_rows: with_stats
+                .iter()
+                .map(|id| stat_row(id, "overall", 30, 16))
+                .collect(),
+            role_rows: catalog
+                .champions
+                .iter()
+                .filter(|champion| champion.id != "ghost")
+                .map(|champion| {
+                    stat_row(&champion.id, champion.role_fit.keys().next().unwrap(), 30, 16)
+                })
+                .collect(),
+            draft_presence: BTreeMap::new(),
+        };
+        // Soft Fearless draft: alpha banned by Blue, bravo picked by Red,
+        // charlie already played by Blue this series, delta manually F-tiered.
+        let request = RecommendationRequest {
+            mode: "fearless".to_string(),
+            blue_bans: vec!["alpha".to_string()],
+            red_picks: vec!["bravo".to_string()],
+            history_blue: vec!["charlie".to_string()],
+            ..request_with_lineup(None)
+        };
+        let manual_tiers = BTreeMap::from([("delta".to_string(), ManualTier::F)]);
+        let shortlist = build_shortlist(
+            &request,
+            &catalog,
+            &statistics,
+            &InteractionEvidence::default(),
+            &manual_tiers,
+        );
+
+        let pick_reason = |id: &str| {
+            shortlist
+                .pick_exclusions
+                .iter()
+                .find(|champion| champion.champion_id == id)
+                .map(|champion| champion.reason)
+        };
+        assert_eq!(pick_reason("alpha"), Some(ExclusionReason::BannedByBlue));
+        assert_eq!(pick_reason("bravo"), Some(ExclusionReason::PickedByRed));
+        assert_eq!(pick_reason("charlie"), Some(ExclusionReason::FearlessUsedOwn));
+        assert_eq!(pick_reason("delta"), Some(ExclusionReason::ManuallyExcluded));
+        assert_eq!(pick_reason("ghost"), Some(ExclusionReason::NoData));
+
+        // Ban exclusions are narrower: F-tier and soft-Fearless-burned
+        // champions can still be ban-scored, so only board/no-data champs land here.
+        let ban_excluded = shortlist
+            .ban_exclusions
+            .iter()
+            .map(|champion| champion.champion_id.as_str())
+            .collect::<BTreeSet<_>>();
+        assert_eq!(ban_excluded, BTreeSet::from(["alpha", "bravo", "ghost"]));
+
+        // Every scoreable champion appears in the pick pool, ranked identically
+        // to the shortlist while the pool still fits inside the top 8.
+        let pool_order = shortlist
+            .pick_pool
+            .iter()
+            .map(|row| row.champion_id.as_str())
+            .collect::<Vec<_>>();
+        let shortlist_order = shortlist
+            .pick_recommendations
+            .iter()
+            .map(|row| row.champion_id.as_str())
+            .collect::<Vec<_>>();
+        assert_eq!(pool_order, shortlist_order);
+        assert_eq!(
+            pool_order.iter().copied().collect::<BTreeSet<_>>(),
+            BTreeSet::from(["echo", "foxtrot"])
+        );
+
+        let ban_pool = shortlist
+            .ban_pool
+            .iter()
+            .map(|row| row.champion_id.as_str())
+            .collect::<BTreeSet<_>>();
+        assert_eq!(
+            ban_pool,
+            BTreeSet::from(["charlie", "delta", "echo", "foxtrot"])
+        );
+        assert!(shortlist
+            .pick_pool
+            .windows(2)
+            .all(|pair| pair[0].score >= pair[1].score));
     }
 
     fn core_stats(value: i64) -> crate::athletes::CoreStats {

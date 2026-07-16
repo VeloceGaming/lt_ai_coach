@@ -284,8 +284,32 @@ export type ScoringWeights = {
 export type RecommendationShortlist = {
   pickRecommendations: Recommendation[];
   banRecommendations: Recommendation[];
+  // Full sorted consultation pools behind champion search / role browsing.
+  // Supersets of the top-8 shortlists above.
+  pickPool: Recommendation[];
+  banPool: Recommendation[];
+  // Champions with no score card in this draft, and why.
+  pickExclusions: ExcludedChampion[];
+  banExclusions: ExcludedChampion[];
   blueProjection: TeamProjection;
   redProjection: TeamProjection;
+};
+
+export type ExclusionReason =
+  | "bannedByBlue"
+  | "bannedByRed"
+  | "pickedByBlue"
+  | "pickedByRed"
+  | "fearlessUsedOwn"
+  | "fearlessUsedByOpponent"
+  | "manuallyExcluded"
+  | "noData";
+
+export type ExcludedChampion = {
+  championId: string;
+  championName: string;
+  portrait: ChampionPortrait | null;
+  reason: ExclusionReason;
 };
 
 export type LiveRecommendationResponse = {
@@ -321,6 +345,9 @@ export type DraftMode = "normal" | "fearless" | "fearless-hard";
 export type DraftSide = "blue" | "red";
 export type DraftAction = "blue-ban" | "red-ban" | "blue-pick" | "red-pick" | "history-blue" | "history-red";
 export type DraftState = { blueBans: string[]; redBans: string[]; bluePicks: string[]; redPicks: string[]; historyBlue: string[]; historyRed: string[]; actionLog: DraftActionRecord[]; };
+// Hypothetical champions the user staged on the board while the bridge is
+// live. A separate layer over the real draft: real picks always win.
+export type ShadowLists = Pick<DraftState, "blueBans" | "redBans" | "bluePicks" | "redPicks">;
 export type GameRecord = { gameNumber: number; bluePicks: string[]; redPicks: string[] };
 export type BridgePhase = "unknown" | "stadiumEntrance" | "draft" | "";
 export type BridgeState = {

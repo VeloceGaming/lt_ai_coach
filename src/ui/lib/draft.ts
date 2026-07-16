@@ -1,10 +1,40 @@
 // Pure draft logic: turn order, action bookkeeping, and availability rules.
 // No React, no side effects.
 
-import type { DraftAction, DraftActionRecord, DraftMode, DraftSide, DraftState, DraftTurn } from "../types";
+import type { DraftAction, DraftActionRecord, DraftMode, DraftSide, DraftState, DraftTurn, ShadowLists } from "../types";
 import { titleCase } from "./format";
 
 export const emptyDraft: DraftState = { blueBans: [], redBans: [], bluePicks: [], redPicks: [], historyBlue: [], historyRed: [], actionLog: [] };
+export const emptyShadow: ShadowLists = { blueBans: [], redBans: [], bluePicks: [], redPicks: [] };
+
+export function hasShadows(shadow: ShadowLists): boolean {
+  return shadow.blueBans.length + shadow.redBans.length + shadow.bluePicks.length + shadow.redPicks.length > 0;
+}
+
+// The board as the coach is imagining it: real draft first, shadow champions
+// appended onto the open slots. A shadow that meanwhile landed on the real
+// board (in any list) is stale and silently dropped; overflow past the slot
+// caps is dropped too.
+export function mergeShadow(draft: DraftState, shadow: ShadowLists, bansPerSide = 3): DraftState {
+  const banLimit = Math.max(1, Math.min(5, Math.round(bansPerSide)));
+  const used = new Set([...draft.blueBans, ...draft.redBans, ...draft.bluePicks, ...draft.redPicks]);
+  const merge = (real: string[], shadows: string[], cap: number) => {
+    const merged = [...real];
+    for (const id of shadows) {
+      if (merged.length >= cap || used.has(id)) continue;
+      used.add(id);
+      merged.push(id);
+    }
+    return merged;
+  };
+  return {
+    ...draft,
+    blueBans: merge(draft.blueBans, shadow.blueBans, banLimit),
+    redBans: merge(draft.redBans, shadow.redBans, banLimit),
+    bluePicks: merge(draft.bluePicks, shadow.bluePicks, 5),
+    redPicks: merge(draft.redPicks, shadow.redPicks, 5),
+  };
+}
 
 // The one recommendation-error message DraftBoard sets itself (not a raw
 // backend error string) — kept as a constant so the display side can swap in
