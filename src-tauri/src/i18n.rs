@@ -195,20 +195,25 @@ fn add_missing_fallback_entries(
     // Older repair builds appended fallbacks after language-specific keys such
     // as champion names. Move only English-valued fallback entries back into
     // the canonical UI-key order; translated values stay exactly where they are.
-    let first_extra = lines.iter().position(|line| {
-        line_entry_key(line).is_some_and(|key| {
-            key != "$meta" && !fallback_by_key.contains_key(key.as_str())
-        })
-    });
+    let first_extra = top_level_entry_lines(&lines)
+        .into_iter()
+        .find_map(|(start, _, key)| {
+            (key != "$meta" && !fallback_by_key.contains_key(key.as_str())).then_some(start)
+        });
     if let Some(first_extra) = first_extra {
+        let top_level_keys: HashMap<usize, String> =
+            top_level_entry_lines(&lines)
+                .into_iter()
+                .map(|(start, _, key)| (start, key))
+                .collect();
         lines = lines
             .into_iter()
             .enumerate()
             .filter_map(|(index, line)| {
                 let should_move = index > first_extra
-                    && line_entry_key(&line).is_some_and(|key| {
+                    && top_level_keys.get(&index).is_some_and(|key| {
                         fallback_by_key.get(key.as_str()).is_some_and(|fallback| {
-                            object.get(&key).and_then(Value::as_str) == Some(*fallback)
+                            object.get(key).and_then(Value::as_str) == Some(*fallback)
                         })
                     });
                 (!should_move).then_some(line)
@@ -217,31 +222,24 @@ fn add_missing_fallback_entries(
     }
 
     for (fallback_index, (key, fallback)) in fallback_entries.iter().enumerate() {
-        if lines
-            .iter()
-            .any(|line| line_entry_key(line).as_deref() == Some(key))
-        {
+        let entries = top_level_entry_lines(&lines);
+        if entries.iter().any(|(_, _, entry)| entry == key) {
             continue;
         }
         let next_key = fallback_entries[fallback_index + 1..]
             .iter()
             .map(|(next, _)| next)
-            .find(|next| {
-                lines
-                    .iter()
-                    .any(|line| line_entry_key(line).as_deref() == Some(next))
-            });
+            .find(|next| entries.iter().any(|(_, _, entry)| entry == *next));
         let mut insertion = next_key
             .and_then(|next| {
-                lines
+                entries
                     .iter()
-                    .position(|line| line_entry_key(line).as_deref() == Some(next))
+                    .find_map(|(start, _, entry)| (entry == next).then_some(*start))
             })
             .or_else(|| {
-                lines.iter().position(|line| {
-                    line_entry_key(line).is_some_and(|entry| {
-                        entry != "$meta" && !fallback_by_key.contains_key(entry.as_str())
-                    })
+                entries.iter().find_map(|(start, _, entry)| {
+                    (entry != "$meta" && !fallback_by_key.contains_key(entry.as_str()))
+                        .then_some(*start)
                 })
             })
             .or_else(|| lines.iter().rposition(|line| line.trim() == "}"))
@@ -261,10 +259,9 @@ fn add_missing_fallback_entries(
         );
     }
 
-    let entry_lines: Vec<usize> = lines
-        .iter()
-        .enumerate()
-        .filter_map(|(index, line)| line_entry_key(line).map(|_| index))
+    let entry_lines: Vec<usize> = top_level_entry_lines(&lines)
+        .into_iter()
+        .map(|(_, end, _)| end)
         .collect();
     for (position, index) in entry_lines.iter().enumerate() {
         let trimmed = lines[*index].trim_end_matches(',').to_string();
@@ -289,6 +286,49 @@ fn line_entry_key(line: &str) -> Option<String> {
     let trimmed = line.trim_start();
     let end = trimmed.find("\":")?;
     serde_json::from_str(&trimmed[..=end]).ok()
+}
+
+// Returns only properties of the root JSON object. Tracking structural depth
+// prevents nested metadata such as a pretty-printed `$meta` object from being
+// mistaken for translation entries and having its commas rewritten.
+fn top_level_entry_lines(lines: &[String]) -> Vec<(usize, usize, String)> {
+    let mut entries = Vec::new();
+    let mut depth = 0_i32;
+    let mut in_string = false;
+    let mut escaped = false;
+    let mut pending_entry: Option<(usize, String)> = None;
+
+    for (index, line) in lines.iter().enumerate() {
+        if depth == 1 && pending_entry.is_none() {
+            if let Some(key) = line_entry_key(line) {
+                pending_entry = Some((index, key));
+            }
+        }
+        for character in line.chars() {
+            if in_string {
+                if escaped {
+                    escaped = false;
+                } else if character == '\\' {
+                    escaped = true;
+                } else if character == '"' {
+                    in_string = false;
+                }
+                continue;
+            }
+            match character {
+                '"' => in_string = true,
+                '{' | '[' => depth += 1,
+                '}' | ']' => depth -= 1,
+                _ => {}
+            }
+        }
+        if depth == 1 {
+            if let Some((start, key)) = pending_entry.take() {
+                entries.push((start, index, key));
+            }
+        }
+    }
+    entries
 }
 
 fn load_translation_from_roots(
@@ -440,7 +480,7 @@ mod tests {
         let path = root.join("base.json");
         fs::write(
             &path,
-            "{\n  \"$meta\": { \"name\": \"Test\", \"direction\": \"ltr\" },\n\n  \"existing\": \"已翻譯\"\n}\n",
+            "{\n  \"$meta\": {\n    \"name\": \"Test\",\n    \"direction\": \"ltr\"\n  },\n\n  \"existing\": \"已翻譯\"\n}\n",
         )
         .unwrap();
 
@@ -455,6 +495,8 @@ mod tests {
         .unwrap();
 
         let parsed: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(parsed["$meta"]["name"], "Test");
+        assert_eq!(parsed["$meta"]["direction"], "ltr");
         assert_eq!(parsed["existing"], "已翻譯");
         assert_eq!(parsed["new.key"], "New fallback");
         fs::remove_dir_all(root).unwrap();
