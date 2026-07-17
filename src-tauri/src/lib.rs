@@ -188,7 +188,7 @@ struct LiveRecommendationResponse {
 }
 
 fn default_minimum_interaction_games() -> usize {
-    3
+    5
 }
 
 fn default_bans_per_side() -> usize {

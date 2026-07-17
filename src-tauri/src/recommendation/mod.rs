@@ -141,11 +141,11 @@ pub struct ScoringWeights {
 impl Default for ScoringWeights {
     fn default() -> Self {
         Self {
-            performance: 50.0,
-            synergy: 20.0,
-            matchup: 15.0,
-            flexibility: 10.0,
-            draft_presence: 10.0,
+            performance: 70.0,
+            synergy: 35.0,
+            matchup: 20.0,
+            flexibility: 5.0,
+            draft_presence: 5.0,
         }
     }
 }
@@ -2639,7 +2639,7 @@ fn normalized_weights(weights: &ScoringWeights) -> ScoringWeights {
 }
 
 fn default_minimum_interaction_games() -> usize {
-    3
+    5
 }
 
 fn projected_roles(projection: &TeamProjection) -> BTreeSet<String> {

@@ -3,11 +3,11 @@
 import type { DraftStrategy, DraftTuning, ScoringWeights, UserPreferences } from "../types";
 
 export const defaultScoringWeights: ScoringWeights = {
-  performance: 50,
-  synergy: 20,
-  matchup: 15,
-  flexibility: 10,
-  draftPresence: 10,
+  performance: 70,
+  synergy: 35,
+  matchup: 20,
+  flexibility: 5,
+  draftPresence: 5,
 };
 
 // ── Draft strategy presets ──────────────────────────────────────────────────
@@ -57,7 +57,7 @@ export const defaultUserPreferences: UserPreferences = {
   weights: defaultScoringWeights,
   strategy: "balanced",
   customTuning: defaultCustomTuning,
-  minimumInteractionGames: 3,
+  minimumInteractionGames: 5,
   compactMode: false,
   autoOverlay: true,
   debugMode: false,
